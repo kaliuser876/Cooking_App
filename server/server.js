@@ -13,7 +13,7 @@ import collectionRoutes from "./routes/collections.js"; // NEW
 
 const app = express();
 const PORT = process.env.PORT || 8080;
-const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/recipes";
+const MONGO_URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/recipes";
 
 // Middleware
 app.use(
@@ -37,7 +37,7 @@ app.get("/", (req, res) => {
 
 // Connect to MongoDB
 mongoose
-  .connect(MONGO_URI)
+  .connect(MONGO_URL)
   .then(() => {
     console.log("MongoDB connected");
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

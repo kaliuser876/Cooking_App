@@ -6,7 +6,7 @@ export const sendVerificationEmail = async (email, token) => {
   const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
   const { data, error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM,
+    from: process.env.EMAIL_FROM || "onboarding@resend.dev",
     to: email,
     subject: "Verify Your Email - Recipe App",
     html: `
@@ -42,7 +42,7 @@ export const sendPasswordResetEmail = async (email, token) => {
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
   const { data, error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM,
+    from: process.env.EMAIL_FROM || "onboarding@resend.dev",
     to: email,
     subject: "Reset Your Password - Recipe App",
     html: `

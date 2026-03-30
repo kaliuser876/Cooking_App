@@ -1,24 +1,12 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-// Create transporter - configure with your email service
-const createTransporter = () => {
-  // For Gmail, you'll need to use App Passwords
-  // For production, use a service like SendGrid, Mailgun, etc.
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-};
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendVerificationEmail = async (email, token) => {
-  const transporter = createTransporter();
   const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
+  const { data, error } = await resend.emails.send({
+    from: process.env.EMAIL_FROM,
     to: email,
     subject: "Verify Your Email - Recipe App",
     html: `
@@ -28,7 +16,7 @@ export const sendVerificationEmail = async (email, token) => {
         <div style="text-align: center; margin: 30px 0;">
           <a href="${verificationUrl}" 
              style="background-color: #4CAF50; color: white; padding: 15px 30px; 
-                    text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
             Verify Email
           </a>
         </div>
@@ -41,17 +29,20 @@ export const sendVerificationEmail = async (email, token) => {
         </p>
       </div>
     `,
-  };
+  });
 
-  await transporter.sendMail(mailOptions);
+  if (error) {
+    throw new Error(`Failed to send verification email: ${error.message}`);
+  }
+
+  return data;
 };
 
 export const sendPasswordResetEmail = async (email, token) => {
-  const transporter = createTransporter();
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
+  const { data, error } = await resend.emails.send({
+    from: process.env.EMAIL_FROM,
     to: email,
     subject: "Reset Your Password - Recipe App",
     html: `
@@ -61,7 +52,7 @@ export const sendPasswordResetEmail = async (email, token) => {
         <div style="text-align: center; margin: 30px 0;">
           <a href="${resetUrl}" 
              style="background-color: #2196F3; color: white; padding: 15px 30px; 
-                    text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
             Reset Password
           </a>
         </div>
@@ -74,7 +65,11 @@ export const sendPasswordResetEmail = async (email, token) => {
         </p>
       </div>
     `,
-  };
+  });
 
-  await transporter.sendMail(mailOptions);
+  if (error) {
+    throw new Error(`Failed to send password reset email: ${error.message}`);
+  }
+
+  return data;
 };

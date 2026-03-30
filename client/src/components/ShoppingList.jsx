@@ -17,6 +17,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { API_BASE_URL } from "../config";
 import { useTheme } from "../context/ThemeContext";
+import { getAuthHeaders } from "../context/AuthContext";
 
 const CATEGORY_OPTIONS = [
   "All",
@@ -29,6 +30,54 @@ const CATEGORY_OPTIONS = [
 ];
 
 const CATEGORY_ORDER = ["Produce", "Dairy", "Meat", "Pantry", "Spices", "Other"];
+
+const Toast = ({ message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 3000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const backgroundColor =
+    type === "success" ? "#4caf50" : type === "error" ? "#f44336" : "#2196f3";
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        bottom: "24px",
+        right: "24px",
+        backgroundColor,
+        color: "white",
+        padding: "16px 24px",
+        borderRadius: "12px",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+        zIndex: 10000,
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+      }}
+    >
+      <span style={{ fontSize: "20px" }}>
+        {type === "success" ? "✓" : type === "error" ? "✕" : "ℹ"}
+      </span>
+      <span style={{ fontWeight: 500 }}>{message}</span>
+      <button
+        onClick={onClose}
+        style={{
+          background: "none",
+          border: "none",
+          color: "white",
+          cursor: "pointer",
+          fontSize: "18px",
+          padding: "0 0 0 8px",
+          opacity: 0.8,
+        }}
+      >
+        ×
+      </button>
+    </div>
+  );
+};
 
 // Celebration Overlay Component
 const CelebrationOverlay = ({ onDismiss }) => {
@@ -114,7 +163,6 @@ const CelebrationOverlay = ({ onDismiss }) => {
         overflow: "hidden",
       }}
     >
-      {/* Confetti */}
       {confetti.map((piece) => (
         <div
           key={piece.id}
@@ -129,7 +177,6 @@ const CelebrationOverlay = ({ onDismiss }) => {
         />
       ))}
 
-      {/* Main celebration content */}
       <div
         style={{
           textAlign: "center",
@@ -137,7 +184,6 @@ const CelebrationOverlay = ({ onDismiss }) => {
           animation: "celebrationBounce 0.6s ease-out",
         }}
       >
-        {/* Emoji burst */}
         <div
           style={{
             fontSize: "80px",
@@ -148,7 +194,6 @@ const CelebrationOverlay = ({ onDismiss }) => {
           🎉🛒🎊
         </div>
 
-        {/* Main text */}
         <h1
           style={{
             fontSize: "clamp(2rem, 8vw, 4rem)",
@@ -174,7 +219,6 @@ const CelebrationOverlay = ({ onDismiss }) => {
           You're done shopping! 🥳
         </h2>
 
-        {/* Fun message */}
         <p
           style={{
             fontSize: "clamp(1rem, 3vw, 1.3rem)",
@@ -186,7 +230,6 @@ const CelebrationOverlay = ({ onDismiss }) => {
           Time to put those groceries away! 📦
         </p>
 
-        {/* Stars decoration */}
         <div
           style={{
             display: "flex",
@@ -207,7 +250,6 @@ const CelebrationOverlay = ({ onDismiss }) => {
           </span>
         </div>
 
-        {/* Dismiss button */}
         <button
           onClick={onDismiss}
           style={{
@@ -222,14 +264,6 @@ const CelebrationOverlay = ({ onDismiss }) => {
             boxShadow: "0 4px 20px rgba(76, 175, 80, 0.4)",
             animation: "buttonPulse 2s ease-in-out infinite",
             transition: "transform 0.2s, box-shadow 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = "scale(1.05)";
-            e.target.style.boxShadow = "0 6px 30px rgba(76, 175, 80, 0.6)";
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = "scale(1)";
-            e.target.style.boxShadow = "0 4px 20px rgba(76, 175, 80, 0.4)";
           }}
         >
           🎯 Awesome!
@@ -247,105 +281,46 @@ const CelebrationOverlay = ({ onDismiss }) => {
         </p>
       </div>
 
-      {/* CSS Animations */}
       <style>
         {`
           @keyframes confettiFall {
-            0% {
-              transform: translateY(-20px) rotate(0deg);
-              opacity: 1;
-            }
-            100% {
-              transform: translateY(100vh) rotate(720deg);
-              opacity: 0;
-            }
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
           }
-
           @keyframes celebrationBounce {
-            0% {
-              transform: scale(0.3) translateY(50px);
-              opacity: 0;
-            }
-            50% {
-              transform: scale(1.1) translateY(-10px);
-            }
-            70% {
-              transform: scale(0.95) translateY(5px);
-            }
-            100% {
-              transform: scale(1) translateY(0);
-              opacity: 1;
-            }
+            0% { transform: scale(0.3) translateY(50px); opacity: 0; }
+            50% { transform: scale(1.1) translateY(-10px); }
+            70% { transform: scale(0.95) translateY(5px); }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
           }
-
           @keyframes emojiPop {
-            0% {
-              transform: scale(0);
-            }
-            50% {
-              transform: scale(1.3);
-            }
-            100% {
-              transform: scale(1);
-            }
+            0% { transform: scale(0); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
           }
-
           @keyframes textGlow {
-            0% {
-              text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-            }
-            100% {
-              text-shadow: 0 0 40px rgba(255, 255, 255, 0.6), 0 0 60px rgba(76, 175, 80, 0.4);
-            }
+            0% { text-shadow: 0 0 20px rgba(255, 255, 255, 0.3); }
+            100% { text-shadow: 0 0 40px rgba(255, 255, 255, 0.6), 0 0 60px rgba(76, 175, 80, 0.4); }
           }
-
           @keyframes slideUp {
-            0% {
-              transform: translateY(30px);
-              opacity: 0;
-            }
-            100% {
-              transform: translateY(0);
-              opacity: 1;
-            }
+            0% { transform: translateY(30px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
           }
-
           @keyframes twinkle {
-            0%, 100% {
-              transform: scale(1);
-              opacity: 1;
-            }
-            50% {
-              transform: scale(1.3);
-              opacity: 0.7;
-            }
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
           }
-
           @keyframes starSpin {
-            0% {
-              transform: rotate(0deg);
-            }
-            100% {
-              transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
           }
-
           @keyframes buttonPulse {
-            0%, 100% {
-              transform: scale(1);
-            }
-            50% {
-              transform: scale(1.02);
-            }
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
           }
-
           @keyframes fadeIn {
-            0% {
-              opacity: 0;
-            }
-            100% {
-              opacity: 1;
-            }
+            0% { opacity: 0; }
+            100% { opacity: 1; }
           }
         `}
       </style>
@@ -353,7 +328,6 @@ const CelebrationOverlay = ({ onDismiss }) => {
   );
 };
 
-// Sortable Item Component
 const SortableItem = ({
   item,
   isEditing,
@@ -529,7 +503,6 @@ const SortableItem = ({
               minWidth: "220px",
             }}
           >
-            {/* Drag Handle */}
             <div
               {...attributes}
               {...listeners}
@@ -618,9 +591,7 @@ const SortableItem = ({
   );
 };
 
-// Main Component
 const ShoppingList = () => {
-  // Use global theme
   const { theme } = useTheme();
 
   const [items, setItems] = useState([]);
@@ -628,6 +599,7 @@ const ShoppingList = () => {
   const [hideChecked, setHideChecked] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({
@@ -638,7 +610,6 @@ const ShoppingList = () => {
   });
   const [savingEdit, setSavingEdit] = useState(false);
 
-  // Add item form
   const [showAddForm, setShowAddForm] = useState(false);
   const [addForm, setAddForm] = useState({
     name: "",
@@ -648,14 +619,17 @@ const ShoppingList = () => {
   });
   const [addingItem, setAddingItem] = useState(false);
 
-  // Celebration state
   const [showCelebration, setShowCelebration] = useState(false);
   const [hasShownCelebration, setHasShownCelebration] = useState(false);
 
-  // Print ref
+  const [toast, setToast] = useState(null);
+
   const printRef = useRef();
 
-  // DnD sensors
+  const showToast = useCallback((message, type = "success") => {
+    setToast({ message, type });
+  }, []);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -667,7 +641,6 @@ const ShoppingList = () => {
     })
   );
 
-  // Check for celebration trigger
   useEffect(() => {
     const totalCount = items.length;
     const checkedCount = items.filter((item) => item.checked).length;
@@ -686,123 +659,180 @@ const ShoppingList = () => {
     setShowCelebration(false);
   }, []);
 
-  // Fetch items
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE_URL}/api/shopping-list`, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch shopping list");
-      const data = await res.json();
-      setItems(data);
+      setError("");
+
+      const res = await fetch(`${API_BASE_URL}/api/shopping-list`, {
+        headers: {
+          ...getAuthHeaders(),
+        },
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to fetch shopping list");
+      }
+
+      setItems(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch shopping list:", err);
+      setItems([]);
+      setError(err?.message || "Failed to load shopping list");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchItems();
-  }, []);
+  }, [fetchItems]);
 
-  // Toggle checked
   const handleToggleChecked = async (item) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/shopping-list/${item._id}`, {
-        credentials: "include",
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
         body: JSON.stringify({ checked: !item.checked }),
       });
-      if (!res.ok) throw new Error("Failed to update item");
-      const updatedItem = await res.json();
+
+      const updatedItem = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(updatedItem?.message || "Failed to update item");
+      }
+
       setItems((prev) =>
         prev.map((i) => (i._id === item._id ? updatedItem : i))
       );
     } catch (err) {
       console.error(err);
+      showToast(err?.message || "Failed to update item", "error");
     }
   };
 
-  // Uncheck all
   const handleUncheckAll = async () => {
     const hasChecked = items.some((item) => item.checked);
     if (!hasChecked) return;
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/shopping-list/uncheck-all`, {
-        credentials: "include",
         method: "PATCH",
+        headers: {
+          ...getAuthHeaders(),
+        },
       });
-      if (!res.ok) throw new Error("Failed to uncheck all");
-      const updatedItems = await res.json();
-      setItems(updatedItems);
+
+      const updatedItems = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(updatedItems?.message || "Failed to uncheck all");
+      }
+
+      setItems(Array.isArray(updatedItems) ? updatedItems : []);
+      showToast("All items unchecked", "success");
     } catch (err) {
       console.error(err);
-      alert("Failed to uncheck all items");
+      showToast(err?.message || "Failed to uncheck all items", "error");
     }
   };
 
-  // Delete checked
   const handleDeleteChecked = async () => {
     const checkedItems = items.filter((item) => item.checked);
     if (checkedItems.length === 0) return;
+
     const confirmed = window.confirm(
       `Delete ${checkedItems.length} checked item${checkedItems.length !== 1 ? "s" : ""}?`
     );
     if (!confirmed) return;
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/shopping-list/checked`, {
-        credentials: "include",
         method: "DELETE",
+        headers: {
+          ...getAuthHeaders(),
+        },
       });
-      if (!res.ok) throw new Error("Failed to delete checked items");
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to delete checked items");
+      }
+
       setItems((prev) => prev.filter((item) => !item.checked));
+
       if (editingId && checkedItems.some((item) => item._id === editingId)) {
         handleCancelEdit();
       }
+
+      showToast("Checked items deleted", "success");
     } catch (err) {
       console.error(err);
-      alert("Failed to delete checked items");
+      showToast(err?.message || "Failed to delete checked items", "error");
     }
   };
 
-  // Delete one
   const handleDelete = async (id) => {
     const confirmed = window.confirm("Delete this item?");
     if (!confirmed) return;
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/shopping-list/${id}`, {
-        credentials: "include",
         method: "DELETE",
+        headers: {
+          ...getAuthHeaders(),
+        },
       });
-      if (!res.ok) throw new Error("Failed to delete item");
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to delete item");
+      }
+
       setItems((prev) => prev.filter((item) => item._id !== id));
       if (editingId === id) handleCancelEdit();
+
+      showToast("Item deleted", "success");
     } catch (err) {
       console.error(err);
-      alert("Failed to delete item");
+      showToast(err?.message || "Failed to delete item", "error");
     }
   };
 
-  // Clear all
   const handleClear = async () => {
     const confirmed = window.confirm("Clear the entire shopping list?");
     if (!confirmed) return;
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/shopping-list`, {
-        credentials: "include",
         method: "DELETE",
+        headers: {
+          ...getAuthHeaders(),
+        },
       });
-      if (!res.ok) throw new Error("Failed to clear list");
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to clear list");
+      }
+
       setItems([]);
       handleCancelEdit();
+      showToast("Shopping list cleared", "success");
     } catch (err) {
       console.error(err);
-      alert("Failed to clear shopping list");
+      showToast(err?.message || "Failed to clear shopping list", "error");
     }
   };
 
-  // Edit handlers
   const handleEditClick = (item) => {
     setEditingId(item._id);
     setEditForm({
@@ -821,79 +851,95 @@ const ShoppingList = () => {
   const handleSaveEdit = async (id) => {
     const trimmedName = editForm.name.trim();
     if (!trimmedName) {
-      alert("Item name is required.");
+      showToast("Item name is required.", "error");
       return;
     }
+
     const payload = {
       name: trimmedName,
       quantity: Number(editForm.quantity) || 1,
       unit: editForm.unit.trim(),
       category: editForm.category || "Other",
     };
+
     try {
       setSavingEdit(true);
+
       const res = await fetch(`${API_BASE_URL}/api/shopping-list/${id}`, {
-        credentials: "include",
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
         body: JSON.stringify(payload),
       });
+
+      const updatedItem = await res.json().catch(() => null);
+
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to update item");
+        throw new Error(updatedItem?.message || "Failed to update item");
       }
-      const updatedItem = await res.json();
+
       setItems((prev) =>
         prev.map((item) => (item._id === id ? updatedItem : item))
       );
+
       handleCancelEdit();
+      showToast("Item updated", "success");
     } catch (err) {
       console.error(err);
-      alert(err.message || "Failed to update item");
+      showToast(err?.message || "Failed to update item", "error");
     } finally {
       setSavingEdit(false);
     }
   };
 
-  // Add item manually
   const handleAddItem = async (e) => {
     e.preventDefault();
+
     const trimmedName = addForm.name.trim();
     if (!trimmedName) {
-      alert("Item name is required.");
+      showToast("Item name is required.", "error");
       return;
     }
+
     const payload = {
       name: trimmedName,
       quantity: Number(addForm.quantity) || 1,
       unit: addForm.unit.trim(),
       category: addForm.category || "Other",
     };
+
     try {
       setAddingItem(true);
+
       const res = await fetch(`${API_BASE_URL}/api/shopping-list/item`, {
-        credentials: "include",
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
         body: JSON.stringify(payload),
       });
+
+      const newItem = await res.json().catch(() => null);
+
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to add item");
+        throw new Error(newItem?.message || "Failed to add item");
       }
-      const newItem = await res.json();
+
       setItems((prev) => [...prev, newItem]);
       setAddForm({ name: "", quantity: 1, unit: "", category: "Other" });
       setShowAddForm(false);
+      showToast("Item added", "success");
     } catch (err) {
       console.error(err);
-      alert(err.message || "Failed to add item");
+      showToast(err?.message || "Failed to add item", "error");
     } finally {
       setAddingItem(false);
     }
   };
 
-  // Drag and drop handler
   const handleDragEnd = async (event) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -906,38 +952,36 @@ const ShoppingList = () => {
 
     try {
       const orderedIds = newItems.map((item) => item._id);
-      await fetch(`${API_BASE_URL}/api/shopping-list/reorder`, {
-        credentials: "include",
+      const res = await fetch(`${API_BASE_URL}/api/shopping-list/reorder`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
         body: JSON.stringify({ orderedIds }),
       });
+
+      if (!res.ok) {
+        throw new Error("Failed to save order");
+      }
     } catch (err) {
       console.error("Failed to save order:", err);
+      showToast("Failed to save item order", "error");
+      fetchItems();
     }
   };
 
-  // Copy to clipboard
-  const handleCopyToClipboard = () => {
-    const text = generateListText();
-    navigator.clipboard.writeText(text).then(
-      () => alert("Shopping list copied to clipboard!"),
-      () => alert("Failed to copy to clipboard")
-    );
+  const formatQuantity = (qty) => {
+    if (qty == null) return "";
+    return Number.isInteger(qty) ? String(qty) : String(Number(qty.toFixed(2)));
   };
 
-  // Print
-  const handlePrint = () => {
-    const printContent = generatePrintHTML();
-    const printWindow = window.open("", "_blank");
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
+  const formatItemText = (item) => {
+    return [formatQuantity(item.quantity), item.unit, item.name]
+      .filter(Boolean)
+      .join(" ");
   };
 
-  // Generate text for clipboard
   const generateListText = () => {
     const grouped = items.reduce((acc, item) => {
       const category = item.category || "Other";
@@ -966,7 +1010,17 @@ const ShoppingList = () => {
     return text;
   };
 
-  // Generate HTML for printing
+  const handleCopyToClipboard = async () => {
+    try {
+      const text = generateListText();
+      await navigator.clipboard.writeText(text);
+      showToast("Shopping list copied to clipboard!", "success");
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to copy to clipboard", "error");
+    }
+  };
+
   const generatePrintHTML = () => {
     const grouped = items.reduce((acc, item) => {
       const category = item.category || "Other";
@@ -1050,7 +1104,22 @@ const ShoppingList = () => {
     return html;
   };
 
-  // Filtering
+  const handlePrint = () => {
+    const printContent = generatePrintHTML();
+    const printWindow = window.open("", "_blank");
+
+    if (!printWindow) {
+      showToast("Unable to open print window", "error");
+      return;
+    }
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  };
+
   const filteredItems = useMemo(() => {
     let result = items;
 
@@ -1064,13 +1133,14 @@ const ShoppingList = () => {
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
-      result = result.filter((item) => item.name.toLowerCase().includes(query));
+      result = result.filter((item) =>
+        (item.name || "").toLowerCase().includes(query)
+      );
     }
 
     return result;
   }, [items, selectedCategory, hideChecked, searchQuery]);
 
-  // Grouping and sorting
   const groupedEntries = useMemo(() => {
     const grouped = filteredItems.reduce((acc, item) => {
       const category = item.category || "Other";
@@ -1091,19 +1161,6 @@ const ShoppingList = () => {
     );
   }, [filteredItems]);
 
-  // Formatting
-  const formatQuantity = (qty) => {
-    if (qty == null) return "";
-    return Number.isInteger(qty) ? String(qty) : String(Number(qty.toFixed(2)));
-  };
-
-  const formatItemText = (item) => {
-    return [formatQuantity(item.quantity), item.unit, item.name]
-      .filter(Boolean)
-      .join(" ");
-  };
-
-  // Stats
   const checkedCount = items.filter((item) => item.checked).length;
   const totalCount = items.length;
   const progressPercent =
@@ -1111,13 +1168,19 @@ const ShoppingList = () => {
 
   return (
     <>
-      {/* Celebration Overlay */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       {showCelebration && (
         <CelebrationOverlay onDismiss={handleDismissCelebration} />
       )}
 
       <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-        {/* Header */}
         <div style={{ textAlign: "center", marginBottom: "24px" }}>
           <h2 style={{ margin: "0 0 8px", fontSize: "2rem", color: theme.text }}>
             🛒 Shopping List
@@ -1127,410 +1190,6 @@ const ShoppingList = () => {
           </p>
         </div>
 
-        {/* Progress Bar */}
-        {totalCount > 0 && (
-          <div style={{ marginBottom: "24px" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "8px",
-              }}
-            >
-              <span style={{ fontSize: "14px", fontWeight: 600, color: theme.text }}>
-                Shopping Progress
-              </span>
-              <span style={{ fontSize: "14px", color: theme.textSecondary }}>
-                {checkedCount} of {totalCount} items ({progressPercent}%)
-              </span>
-            </div>
-            <div
-              style={{
-                height: "12px",
-                backgroundColor: theme.progressBackground,
-                borderRadius: "6px",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  height: "100%",
-                  width: `${progressPercent}%`,
-                  backgroundColor:
-                    progressPercent === 100
-                      ? "#4caf50"
-                      : progressPercent >= 50
-                      ? "#8bc34a"
-                      : "#ffc107",
-                  borderRadius: "6px",
-                  transition: "width 0.3s ease, background-color 0.3s ease",
-                }}
-              />
-            </div>
-            {progressPercent === 100 && (
-              <p
-                style={{
-                  textAlign: "center",
-                  marginTop: "12px",
-                  fontSize: "16px",
-                  color: "#4caf50",
-                  fontWeight: 600,
-                }}
-              >
-                🎉 All done! Great job!
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Toolbar */}
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "12px",
-            background: theme.toolbarBackground,
-            border: `1px solid ${theme.border}`,
-            borderRadius: "12px",
-            padding: "14px 16px",
-            marginBottom: "16px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "16px",
-              flexWrap: "wrap",
-              flex: 1,
-            }}
-          >
-            {/* Search */}
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "18px" }}>🔍</span>
-              <input
-                type="text"
-                placeholder="Search items..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  padding: "8px 12px",
-                  borderRadius: "8px",
-                  border: `1px solid ${theme.inputBorder}`,
-                  backgroundColor: theme.inputBackground,
-                  color: theme.text,
-                  fontSize: "14px",
-                  width: "150px",
-                }}
-              />
-            </div>
-
-            {/* Category Filter */}
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <label style={{ fontWeight: 600, fontSize: "14px", color: theme.text }}>
-                Category:
-              </label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                style={{
-                  padding: "8px 12px",
-                  borderRadius: "8px",
-                  border: `1px solid ${theme.inputBorder}`,
-                  backgroundColor: theme.inputBackground,
-                  color: theme.text,
-                  fontSize: "14px",
-                }}
-              >
-                {CATEGORY_OPTIONS.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Hide Checked Toggle */}
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                cursor: "pointer",
-                fontSize: "14px",
-                fontWeight: 500,
-                color: theme.text,
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={hideChecked}
-                onChange={(e) => setHideChecked(e.target.checked)}
-                style={{
-                  width: "18px",
-                  height: "18px",
-                  cursor: "pointer",
-                  accentColor: theme.buttonPrimary,
-                }}
-              />
-              Hide checked
-            </label>
-          </div>
-
-          <div style={{ fontSize: "14px", color: theme.textSecondary }}>
-            {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""} shown
-          </div>
-        </div>
-
-        {/* Action Buttons Row */}
-        {totalCount > 0 && (
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "10px",
-              marginBottom: "16px",
-            }}
-          >
-            <button
-              onClick={() => setShowAddForm(!showAddForm)}
-              style={{
-                padding: "10px 16px",
-                backgroundColor: theme.buttonSuccess,
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontWeight: 500,
-                fontSize: "14px",
-              }}
-            >
-              {showAddForm ? "✕ Cancel" : "＋ Add Item"}
-            </button>
-
-            <button
-              onClick={handleUncheckAll}
-              disabled={checkedCount === 0}
-              style={{
-                padding: "10px 16px",
-                backgroundColor:
-                  checkedCount === 0 ? theme.borderLight : theme.buttonWarning,
-                color: checkedCount === 0 ? theme.textMuted : "white",
-                border: "none",
-                borderRadius: "8px",
-                cursor: checkedCount === 0 ? "not-allowed" : "pointer",
-                fontWeight: 500,
-                fontSize: "14px",
-              }}
-            >
-              ↩ Uncheck All ({checkedCount})
-            </button>
-
-            <button
-              onClick={handleDeleteChecked}
-              disabled={checkedCount === 0}
-              style={{
-                padding: "10px 16px",
-                backgroundColor:
-                  checkedCount === 0 ? theme.borderLight : theme.buttonDanger,
-                color: checkedCount === 0 ? theme.textMuted : "white",
-                border: "none",
-                borderRadius: "8px",
-                cursor: checkedCount === 0 ? "not-allowed" : "pointer",
-                fontWeight: 500,
-                fontSize: "14px",
-              }}
-            >
-              🗑 Delete Checked ({checkedCount})
-            </button>
-
-            <button
-              onClick={handleCopyToClipboard}
-              style={{
-                padding: "10px 16px",
-                backgroundColor: theme.buttonPrimary,
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontWeight: 500,
-                fontSize: "14px",
-              }}
-            >
-              📋 Copy List
-            </button>
-
-            <button
-              onClick={handlePrint}
-              style={{
-                padding: "10px 16px",
-                backgroundColor: theme.buttonNeutral,
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontWeight: 500,
-                fontSize: "14px",
-              }}
-            >
-              🖨 Print
-            </button>
-          </div>
-        )}
-
-        {/* Add Item Form */}
-        {showAddForm && (
-          <form
-            onSubmit={handleAddItem}
-            style={{
-              background: theme.toolbarBackground,
-              border: `1px solid ${theme.border}`,
-              borderRadius: "12px",
-              padding: "16px",
-              marginBottom: "24px",
-            }}
-          >
-            <h3 style={{ margin: "0 0 16px", fontSize: "1.1rem", color: theme.text }}>
-              Add New Item
-            </h3>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-                gap: "12px",
-                marginBottom: "16px",
-              }}
-            >
-              <input
-                type="text"
-                placeholder="Item name *"
-                value={addForm.name}
-                onChange={(e) =>
-                  setAddForm((prev) => ({ ...prev, name: e.target.value }))
-                }
-                style={{
-                  padding: "12px",
-                  borderRadius: "8px",
-                  border: `1px solid ${theme.inputBorder}`,
-                  backgroundColor: theme.inputBackground,
-                  color: theme.text,
-                  fontSize: "14px",
-                }}
-                required
-              />
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="Quantity"
-                value={addForm.quantity}
-                onChange={(e) =>
-                  setAddForm((prev) => ({ ...prev, quantity: e.target.value }))
-                }
-                style={{
-                  padding: "12px",
-                  borderRadius: "8px",
-                  border: `1px solid ${theme.inputBorder}`,
-                  backgroundColor: theme.inputBackground,
-                  color: theme.text,
-                  fontSize: "14px",
-                }}
-              />
-              <input
-                type="text"
-                placeholder="Unit (e.g., cups, lbs)"
-                value={addForm.unit}
-                onChange={(e) =>
-                  setAddForm((prev) => ({ ...prev, unit: e.target.value }))
-                }
-                style={{
-                  padding: "12px",
-                  borderRadius: "8px",
-                  border: `1px solid ${theme.inputBorder}`,
-                  backgroundColor: theme.inputBackground,
-                  color: theme.text,
-                  fontSize: "14px",
-                }}
-              />
-              <select
-                value={addForm.category}
-                onChange={(e) =>
-                  setAddForm((prev) => ({ ...prev, category: e.target.value }))
-                }
-                style={{
-                  padding: "12px",
-                  borderRadius: "8px",
-                  border: `1px solid ${theme.inputBorder}`,
-                  backgroundColor: theme.inputBackground,
-                  color: theme.text,
-                  fontSize: "14px",
-                }}
-              >
-                {CATEGORY_OPTIONS.filter((c) => c !== "All").map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button
-              type="submit"
-              disabled={addingItem}
-              style={{
-                padding: "12px 24px",
-                backgroundColor: theme.buttonSuccess,
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                cursor: addingItem ? "not-allowed" : "pointer",
-                fontWeight: 600,
-                fontSize: "14px",
-              }}
-            >
-              {addingItem ? "Adding..." : "Add Item"}
-            </button>
-          </form>
-        )}
-
-        {/* Empty state for no items at all */}
-        {!loading && totalCount === 0 && !showAddForm && (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "60px 20px",
-              border: `1px dashed ${theme.border}`,
-              borderRadius: "12px",
-              backgroundColor: theme.toolbarBackground,
-            }}
-          >
-            <p style={{ margin: "0 0 16px", fontSize: "20px", color: theme.text }}>
-              Your shopping list is empty
-            </p>
-            <p style={{ margin: "0 0 20px", color: theme.textSecondary }}>
-              Add ingredients from a recipe or add items manually.
-            </p>
-            <button
-              onClick={() => setShowAddForm(true)}
-              style={{
-                padding: "12px 24px",
-                backgroundColor: theme.buttonSuccess,
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontWeight: 600,
-                fontSize: "15px",
-              }}
-            >
-              ＋ Add First Item
-            </button>
-          </div>
-        )}
-
-        {/* Content */}
         {loading ? (
           <div
             style={{
@@ -1541,7 +1200,7 @@ const ShoppingList = () => {
           >
             <p style={{ fontSize: "18px" }}>Loading shopping list...</p>
           </div>
-        ) : totalCount > 0 && filteredItems.length === 0 ? (
+        ) : error ? (
           <div
             style={{
               textAlign: "center",
@@ -1549,118 +1208,546 @@ const ShoppingList = () => {
               border: `1px dashed ${theme.border}`,
               borderRadius: "12px",
               backgroundColor: theme.toolbarBackground,
+              marginBottom: "24px",
             }}
           >
-            <p style={{ margin: "0 0 8px", fontSize: "18px", color: theme.text }}>
-              No items match your filters
+            <p style={{ margin: "0 0 8px", fontSize: "20px", color: theme.text }}>
+              Failed to load shopping list
             </p>
-            <p style={{ margin: 0, color: theme.textSecondary }}>
-              Try changing the category, search, or showing checked items.
-            </p>
+            <p style={{ margin: "0 0 20px", color: theme.textSecondary }}>{error}</p>
+            <button
+              onClick={fetchItems}
+              style={{
+                padding: "12px 24px",
+                backgroundColor: theme.buttonPrimary,
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              Retry
+            </button>
           </div>
         ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <div ref={printRef}>
-              {groupedEntries.map(([category, categoryItems]) => {
-                const categoryChecked = categoryItems.filter((i) => i.checked).length;
-                const categoryIds = categoryItems.map((item) => item._id);
+          <>
+            {totalCount > 0 && (
+              <div style={{ marginBottom: "24px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "8px",
+                  }}
+                >
+                  <span style={{ fontSize: "14px", fontWeight: 600, color: theme.text }}>
+                    Shopping Progress
+                  </span>
+                  <span style={{ fontSize: "14px", color: theme.textSecondary }}>
+                    {checkedCount} of {totalCount} items ({progressPercent}%)
+                  </span>
+                </div>
+                <div
+                  style={{
+                    height: "12px",
+                    backgroundColor: theme.progressBackground,
+                    borderRadius: "6px",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      height: "100%",
+                      width: `${progressPercent}%`,
+                      backgroundColor:
+                        progressPercent === 100
+                          ? "#4caf50"
+                          : progressPercent >= 50
+                          ? "#8bc34a"
+                          : "#ffc107",
+                      borderRadius: "6px",
+                      transition: "width 0.3s ease, background-color 0.3s ease",
+                    }}
+                  />
+                </div>
+                {progressPercent === 100 && (
+                  <p
+                    style={{
+                      textAlign: "center",
+                      marginTop: "12px",
+                      fontSize: "16px",
+                      color: "#4caf50",
+                      fontWeight: 600,
+                    }}
+                  >
+                    🎉 All done! Great job!
+                  </p>
+                )}
+              </div>
+            )}
 
-                return (
-                  <section key={category} style={{ marginBottom: "28px" }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: "12px",
-                        gap: "10px",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <h3
-                        style={{
-                          margin: 0,
-                          fontSize: "1.2rem",
-                          color: theme.text,
-                          borderLeft: `5px solid ${theme.categoryAccent}`,
-                          paddingLeft: "10px",
-                        }}
-                      >
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "12px",
+                background: theme.toolbarBackground,
+                border: `1px solid ${theme.border}`,
+                borderRadius: "12px",
+                padding: "14px 16px",
+                marginBottom: "16px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "16px",
+                  flexWrap: "wrap",
+                  flex: 1,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ fontSize: "18px" }}>🔍</span>
+                  <input
+                    type="text"
+                    placeholder="Search items..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: "8px",
+                      border: `1px solid ${theme.inputBorder}`,
+                      backgroundColor: theme.inputBackground,
+                      color: theme.text,
+                      fontSize: "14px",
+                      width: "150px",
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <label style={{ fontWeight: 600, fontSize: "14px", color: theme.text }}>
+                    Category:
+                  </label>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: "8px",
+                      border: `1px solid ${theme.inputBorder}`,
+                      backgroundColor: theme.inputBackground,
+                      color: theme.text,
+                      fontSize: "14px",
+                    }}
+                  >
+                    {CATEGORY_OPTIONS.map((category) => (
+                      <option key={category} value={category}>
                         {category}
-                      </h3>
-                      <span style={{ fontSize: "13px", color: theme.textMuted }}>
-                        {categoryChecked}/{categoryItems.length} checked
-                      </span>
-                    </div>
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                    <SortableContext
-                      items={categoryIds}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "12px",
-                        }}
-                      >
-                        {categoryItems.map((item) => (
-                          <SortableItem
-                            key={item._id}
-                            item={item}
-                            isEditing={editingId === item._id}
-                            editForm={editForm}
-                            setEditForm={setEditForm}
-                            savingEdit={savingEdit}
-                            onToggleChecked={handleToggleChecked}
-                            onEditClick={handleEditClick}
-                            onCancelEdit={handleCancelEdit}
-                            onSaveEdit={handleSaveEdit}
-                            onDelete={handleDelete}
-                            theme={theme}
-                            categoryOptions={CATEGORY_OPTIONS}
-                            formatItemText={formatItemText}
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
-                  </section>
-                );
-              })}
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    color: theme.text,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={hideChecked}
+                    onChange={(e) => setHideChecked(e.target.checked)}
+                    style={{
+                      width: "18px",
+                      height: "18px",
+                      cursor: "pointer",
+                      accentColor: theme.buttonPrimary,
+                    }}
+                  />
+                  Hide checked
+                </label>
+              </div>
+
+              <div style={{ fontSize: "14px", color: theme.textSecondary }}>
+                {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""} shown
+              </div>
             </div>
 
-            {/* Footer Actions */}
             {totalCount > 0 && (
               <div
                 style={{
-                  marginTop: "30px",
-                  paddingTop: "20px",
-                  borderTop: `1px solid ${theme.border}`,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "10px",
+                  marginBottom: "16px",
                 }}
               >
                 <button
-                  onClick={handleClear}
+                  onClick={() => setShowAddForm(!showAddForm)}
                   style={{
-                    width: "100%",
-                    padding: "14px",
-                    backgroundColor: theme.buttonDark,
-                    color: theme.buttonDark === "#e0e0e0" ? "#111" : "#fff",
+                    padding: "10px 16px",
+                    backgroundColor: theme.buttonSuccess,
+                    color: "white",
                     border: "none",
-                    borderRadius: "10px",
+                    borderRadius: "8px",
                     cursor: "pointer",
-                    fontSize: "15px",
-                    fontWeight: 600,
+                    fontWeight: 500,
+                    fontSize: "14px",
                   }}
                 >
-                  Clear Entire List
+                  {showAddForm ? "✕ Cancel" : "＋ Add Item"}
+                </button>
+
+                <button
+                  onClick={handleUncheckAll}
+                  disabled={checkedCount === 0}
+                  style={{
+                    padding: "10px 16px",
+                    backgroundColor:
+                      checkedCount === 0 ? theme.borderLight : theme.buttonWarning,
+                    color: checkedCount === 0 ? theme.textMuted : "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: checkedCount === 0 ? "not-allowed" : "pointer",
+                    fontWeight: 500,
+                    fontSize: "14px",
+                  }}
+                >
+                  ↩ Uncheck All ({checkedCount})
+                </button>
+
+                <button
+                  onClick={handleDeleteChecked}
+                  disabled={checkedCount === 0}
+                  style={{
+                    padding: "10px 16px",
+                    backgroundColor:
+                      checkedCount === 0 ? theme.borderLight : theme.buttonDanger,
+                    color: checkedCount === 0 ? theme.textMuted : "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: checkedCount === 0 ? "not-allowed" : "pointer",
+                    fontWeight: 500,
+                    fontSize: "14px",
+                  }}
+                >
+                  🗑 Delete Checked ({checkedCount})
+                </button>
+
+                <button
+                  onClick={handleCopyToClipboard}
+                  style={{
+                    padding: "10px 16px",
+                    backgroundColor: theme.buttonPrimary,
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontWeight: 500,
+                    fontSize: "14px",
+                  }}
+                >
+                  📋 Copy List
+                </button>
+
+                <button
+                  onClick={handlePrint}
+                  style={{
+                    padding: "10px 16px",
+                    backgroundColor: theme.buttonNeutral,
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontWeight: 500,
+                    fontSize: "14px",
+                  }}
+                >
+                  🖨 Print
                 </button>
               </div>
             )}
-          </DndContext>
+
+            {showAddForm && (
+              <form
+                onSubmit={handleAddItem}
+                style={{
+                  background: theme.toolbarBackground,
+                  border: `1px solid ${theme.border}`,
+                  borderRadius: "12px",
+                  padding: "16px",
+                  marginBottom: "24px",
+                }}
+              >
+                <h3 style={{ margin: "0 0 16px", fontSize: "1.1rem", color: theme.text }}>
+                  Add New Item
+                </h3>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                    gap: "12px",
+                    marginBottom: "16px",
+                  }}
+                >
+                  <input
+                    type="text"
+                    placeholder="Item name *"
+                    value={addForm.name}
+                    onChange={(e) =>
+                      setAddForm((prev) => ({ ...prev, name: e.target.value }))
+                    }
+                    style={{
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: `1px solid ${theme.inputBorder}`,
+                      backgroundColor: theme.inputBackground,
+                      color: theme.text,
+                      fontSize: "14px",
+                    }}
+                    required
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Quantity"
+                    value={addForm.quantity}
+                    onChange={(e) =>
+                      setAddForm((prev) => ({ ...prev, quantity: e.target.value }))
+                    }
+                    style={{
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: `1px solid ${theme.inputBorder}`,
+                      backgroundColor: theme.inputBackground,
+                      color: theme.text,
+                      fontSize: "14px",
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Unit (e.g., cups, lbs)"
+                    value={addForm.unit}
+                    onChange={(e) =>
+                      setAddForm((prev) => ({ ...prev, unit: e.target.value }))
+                    }
+                    style={{
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: `1px solid ${theme.inputBorder}`,
+                      backgroundColor: theme.inputBackground,
+                      color: theme.text,
+                      fontSize: "14px",
+                    }}
+                  />
+                  <select
+                    value={addForm.category}
+                    onChange={(e) =>
+                      setAddForm((prev) => ({ ...prev, category: e.target.value }))
+                    }
+                    style={{
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: `1px solid ${theme.inputBorder}`,
+                      backgroundColor: theme.inputBackground,
+                      color: theme.text,
+                      fontSize: "14px",
+                    }}
+                  >
+                    {CATEGORY_OPTIONS.filter((c) => c !== "All").map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  type="submit"
+                  disabled={addingItem}
+                  style={{
+                    padding: "12px 24px",
+                    backgroundColor: theme.buttonSuccess,
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: addingItem ? "not-allowed" : "pointer",
+                    fontWeight: 600,
+                    fontSize: "14px",
+                  }}
+                >
+                  {addingItem ? "Adding..." : "Add Item"}
+                </button>
+              </form>
+            )}
+
+            {!loading && totalCount === 0 && !showAddForm && (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "60px 20px",
+                  border: `1px dashed ${theme.border}`,
+                  borderRadius: "12px",
+                  backgroundColor: theme.toolbarBackground,
+                }}
+              >
+                <p style={{ margin: "0 0 16px", fontSize: "20px", color: theme.text }}>
+                  Your shopping list is empty
+                </p>
+                <p style={{ margin: "0 0 20px", color: theme.textSecondary }}>
+                  Add ingredients from a recipe or add items manually.
+                </p>
+                <button
+                  onClick={() => setShowAddForm(true)}
+                  style={{
+                    padding: "12px 24px",
+                    backgroundColor: theme.buttonSuccess,
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    fontSize: "15px",
+                  }}
+                >
+                  ＋ Add First Item
+                </button>
+              </div>
+            )}
+
+            {totalCount > 0 && filteredItems.length === 0 ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "40px 20px",
+                  border: `1px dashed ${theme.border}`,
+                  borderRadius: "12px",
+                  backgroundColor: theme.toolbarBackground,
+                }}
+              >
+                <p style={{ margin: "0 0 8px", fontSize: "18px", color: theme.text }}>
+                  No items match your filters
+                </p>
+                <p style={{ margin: 0, color: theme.textSecondary }}>
+                  Try changing the category, search, or showing checked items.
+                </p>
+              </div>
+            ) : (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <div ref={printRef}>
+                  {groupedEntries.map(([category, categoryItems]) => {
+                    const categoryChecked = categoryItems.filter((i) => i.checked).length;
+                    const categoryIds = categoryItems.map((item) => item._id);
+
+                    return (
+                      <section key={category} style={{ marginBottom: "28px" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: "12px",
+                            gap: "10px",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <h3
+                            style={{
+                              margin: 0,
+                              fontSize: "1.2rem",
+                              color: theme.text,
+                              borderLeft: `5px solid ${theme.categoryAccent}`,
+                              paddingLeft: "10px",
+                            }}
+                          >
+                            {category}
+                          </h3>
+                          <span style={{ fontSize: "13px", color: theme.textMuted }}>
+                            {categoryChecked}/{categoryItems.length} checked
+                          </span>
+                        </div>
+
+                        <SortableContext
+                          items={categoryIds}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: "12px",
+                            }}
+                          >
+                            {categoryItems.map((item) => (
+                              <SortableItem
+                                key={item._id}
+                                item={item}
+                                isEditing={editingId === item._id}
+                                editForm={editForm}
+                                setEditForm={setEditForm}
+                                savingEdit={savingEdit}
+                                onToggleChecked={handleToggleChecked}
+                                onEditClick={handleEditClick}
+                                onCancelEdit={handleCancelEdit}
+                                onSaveEdit={handleSaveEdit}
+                                onDelete={handleDelete}
+                                theme={theme}
+                                categoryOptions={CATEGORY_OPTIONS}
+                                formatItemText={formatItemText}
+                              />
+                            ))}
+                          </div>
+                        </SortableContext>
+                      </section>
+                    );
+                  })}
+                </div>
+
+                {totalCount > 0 && (
+                  <div
+                    style={{
+                      marginTop: "30px",
+                      paddingTop: "20px",
+                      borderTop: `1px solid ${theme.border}`,
+                    }}
+                  >
+                    <button
+                      onClick={handleClear}
+                      style={{
+                        width: "100%",
+                        padding: "14px",
+                        backgroundColor: theme.buttonDark,
+                        color: theme.buttonDark === "#e0e0e0" ? "#111" : "#fff",
+                        border: "none",
+                        borderRadius: "10px",
+                        cursor: "pointer",
+                        fontSize: "15px",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Clear Entire List
+                    </button>
+                  </div>
+                )}
+              </DndContext>
+            )}
+          </>
         )}
       </div>
     </>

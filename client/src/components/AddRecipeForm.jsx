@@ -13,17 +13,16 @@ const AddRecipeForm = () => {
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
-  // 🔍 SCRAPE RECIPE
   const handleScrape = async () => {
     const trimmedUrl = url.trim();
-    if (!trimmedUrl) return;
+    if (!trimmedUrl || loading) return;
 
     setLoading(true);
-    setError(null);
+    setError("");
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/recipes/scrape`, {
@@ -35,32 +34,44 @@ const AddRecipeForm = () => {
         body: JSON.stringify({ url: trimmedUrl }),
       });
 
-      if (!res.ok) throw new Error("Failed to scrape recipe");
+      const data = await res.json().catch(() => null);
 
-      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to scrape recipe");
+      }
 
       setRecipe(data);
-      setName(data.name || "");
-      setIngredients(data.ingredients || []);
-      setInstructions(data.instructions || []);
+      setName(data?.name || data?.title || "");
+      setIngredients(Array.isArray(data?.ingredients) ? data.ingredients : []);
+      setInstructions(Array.isArray(data?.instructions) ? data.instructions : []);
       setUrl(trimmedUrl);
     } catch (err) {
       console.error(err);
-      setError(err.message || "Error scraping recipe");
+      setError(err?.message || "Error scraping recipe");
     } finally {
       setLoading(false);
     }
   };
 
-  // 💾 SAVE RECIPE
   const handleSave = async () => {
-    if (!recipe || !name.trim() || ingredients.length === 0) {
-      setError("Recipe must have a name and at least one ingredient");
+    const trimmedName = name.trim();
+    const cleanedIngredients = ingredients.map((item) => item.trim()).filter(Boolean);
+    const cleanedInstructions = instructions.map((step) => step.trim()).filter(Boolean);
+
+    if (!recipe) {
+      setError("Please scrape a recipe first.");
       return;
     }
 
+    if (!trimmedName || cleanedIngredients.length === 0) {
+      setError("Recipe must have a name and at least one ingredient.");
+      return;
+    }
+
+    if (saving) return;
+
     setSaving(true);
-    setError(null);
+    setError("");
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/recipes`, {
@@ -70,25 +81,24 @@ const AddRecipeForm = () => {
           ...getAuthHeaders(),
         },
         body: JSON.stringify({
-          name,
-          image: recipe?.image,
-          ingredients,
-          instructions,
-          url,
+          name: trimmedName,
+          image: recipe?.image || "",
+          ingredients: cleanedIngredients,
+          instructions: cleanedInstructions,
+          url: url.trim(),
         }),
       });
 
+      const data = await res.json().catch(() => null);
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || "Failed to save");
+        throw new Error(data?.message || "Failed to save recipe");
       }
 
-      const savedRecipe = await res.json();
-
-      navigate(`/recipes/${savedRecipe._id}`);
+      navigate(`/recipes/${data._id}`);
     } catch (err) {
       console.error(err);
-      setError(err.message || "Error saving recipe");
+      setError(err?.message || "Error saving recipe");
     } finally {
       setSaving(false);
     }
@@ -107,10 +117,17 @@ const AddRecipeForm = () => {
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           style={{ width: "70%", padding: "10px" }}
+          disabled={loading || saving}
         />
         <button
           onClick={handleScrape}
-          style={{ padding: "10px", marginLeft: "10px" }}
+          disabled={loading || saving || !url.trim()}
+          style={{
+            padding: "10px",
+            marginLeft: "10px",
+            cursor: loading || saving || !url.trim() ? "not-allowed" : "pointer",
+            opacity: loading || saving || !url.trim() ? 0.7 : 1,
+          }}
         >
           {loading ? "Scraping..." : "Scrape"}
         </button>
@@ -129,6 +146,7 @@ const AddRecipeForm = () => {
                 border: "none",
                 outline: "none",
               }}
+              disabled={saving}
             />
           </h1>
 
@@ -160,6 +178,7 @@ const AddRecipeForm = () => {
               }
               rows={10}
               style={{ width: "100%", padding: "10px" }}
+              disabled={saving}
             />
           </div>
 
@@ -167,22 +186,28 @@ const AddRecipeForm = () => {
             <h3>Instructions</h3>
             <textarea
               value={instructions.join("\n")}
-              onChange={(e) => setInstructions(e.target.value.split("\n"))}
+              onChange={(e) =>
+                setInstructions(
+                  e.target.value.split("\n")
+                )
+              }
               rows={10}
               style={{ width: "100%", padding: "10px" }}
+              disabled={saving}
             />
           </div>
 
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || loading}
             style={{
               padding: "12px 20px",
               backgroundColor: "green",
               color: "white",
               border: "none",
               borderRadius: "5px",
-              cursor: "pointer",
+              cursor: saving || loading ? "not-allowed" : "pointer",
+              opacity: saving || loading ? 0.7 : 1,
             }}
           >
             {saving ? "Saving..." : "Save Recipe"}

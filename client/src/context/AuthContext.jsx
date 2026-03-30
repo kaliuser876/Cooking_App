@@ -1,42 +1,66 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { API_BASE_URL } from "../config";
 
 const AuthContext = createContext();
+
+const TOKEN_KEY = "token";
+
+const getStoredToken = () => localStorage.getItem(TOKEN_KEY);
+
+export const getAuthHeaders = () => {
+  const token = getStoredToken();
+  return token
+    ? {
+        Authorization: `Bearer ${token}`,
+      }
+    : {};
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if user is logged in on mount
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  const checkAuth = useCallback(async () => {
+    const token = getStoredToken();
 
-  const checkAuth = async () => {
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
-        credentials: "include",
+        headers: {
+          ...getAuthHeaders(),
+        },
       });
 
+      const data = await res.json().catch(() => null);
+
       if (res.ok) {
-        const data = await res.json();
-        setUser(data.user);
+        setUser(data?.user || null);
       } else {
+        localStorage.removeItem(TOKEN_KEY);
         setUser(null);
       }
     } catch (err) {
       console.error("Auth check failed:", err);
+      localStorage.removeItem(TOKEN_KEY);
       setUser(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const login = async (email, password) => {
     const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({ email, password }),
     });
 
@@ -46,7 +70,11 @@ export const AuthProvider = ({ children }) => {
       throw new Error(data.message || "Login failed");
     }
 
-    setUser(data.user);
+    if (data.token) {
+      localStorage.setItem(TOKEN_KEY, data.token);
+    }
+
+    setUser(data.user || null);
     return data;
   };
 
@@ -54,7 +82,6 @@ export const AuthProvider = ({ children }) => {
     const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({ email, password }),
     });
 
@@ -71,11 +98,15 @@ export const AuthProvider = ({ children }) => {
     try {
       await fetch(`${API_BASE_URL}/api/auth/logout`, {
         method: "POST",
-        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
       });
     } catch (err) {
       console.error("Logout error:", err);
     } finally {
+      localStorage.removeItem(TOKEN_KEY);
       setUser(null);
     }
   };
@@ -84,7 +115,6 @@ export const AuthProvider = ({ children }) => {
     const res = await fetch(`${API_BASE_URL}/api/auth/verify-email`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({ token }),
     });
 
@@ -94,7 +124,14 @@ export const AuthProvider = ({ children }) => {
       throw new Error(data.message || "Verification failed");
     }
 
-    setUser(data.user);
+    if (data.token) {
+      localStorage.setItem(TOKEN_KEY, data.token);
+    }
+
+    if (data.user) {
+      setUser(data.user);
+    }
+
     return data;
   };
 
@@ -159,6 +196,7 @@ export const AuthProvider = ({ children }) => {
         resetPassword,
         resendVerification,
         checkAuth,
+        getAuthHeaders,
       }}
     >
       {children}

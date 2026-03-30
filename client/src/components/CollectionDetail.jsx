@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config";
 import { useTheme } from "../context/ThemeContext";
+import { getAuthHeaders } from "../context/AuthContext";
 
 // Recipe Selection Modal
 const AddRecipesModal = ({ collectionId, currentRecipeIds, onClose, onAdd, theme }) => {
@@ -17,8 +18,11 @@ const AddRecipesModal = ({ collectionId, currentRecipeIds, onClose, onAdd, theme
     const fetchRecipes = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/api/recipes?limit=1000`, {
-          credentials: "include",
+          headers: {
+            ...getAuthHeaders(),
+          },
         });
+
         if (res.ok) {
           const data = await res.json();
           setAllRecipes(data.recipes || []);
@@ -69,15 +73,20 @@ const AddRecipesModal = ({ collectionId, currentRecipeIds, onClose, onAdd, theme
 
     setAdding(true);
     try {
-      // Add each recipe to the collection
       for (const recipeId of selectedIds) {
-        await fetch(
+        const res = await fetch(
           `${API_BASE_URL}/api/collections/${collectionId}/recipes/${recipeId}`,
           {
             method: "POST",
-            credentials: "include",
+            headers: {
+              ...getAuthHeaders(),
+            },
           }
         );
+
+        if (!res.ok) {
+          throw new Error("Failed to add recipe to collection");
+        }
       }
 
       onAdd(selectedIds.length);
@@ -120,7 +129,6 @@ const AddRecipesModal = ({ collectionId, currentRecipeIds, onClose, onAdd, theme
           boxShadow: `0 10px 40px ${theme.shadow}`,
         }}
       >
-        {/* Header */}
         <div
           style={{
             padding: "20px 24px",
@@ -143,7 +151,6 @@ const AddRecipesModal = ({ collectionId, currentRecipeIds, onClose, onAdd, theme
             </button>
           </div>
 
-          {/* Search */}
           <div style={{ marginTop: "16px" }}>
             <input
               type="text"
@@ -163,7 +170,6 @@ const AddRecipesModal = ({ collectionId, currentRecipeIds, onClose, onAdd, theme
             />
           </div>
 
-          {/* Selection controls */}
           {filteredRecipes.length > 0 && (
             <div
               style={{
@@ -208,7 +214,6 @@ const AddRecipesModal = ({ collectionId, currentRecipeIds, onClose, onAdd, theme
           )}
         </div>
 
-        {/* Recipe List */}
         <div
           style={{
             flex: 1,
@@ -247,7 +252,6 @@ const AddRecipesModal = ({ collectionId, currentRecipeIds, onClose, onAdd, theme
                       transition: "all 0.2s",
                     }}
                   >
-                    {/* Checkbox */}
                     <div
                       style={{
                         width: "22px",
@@ -266,7 +270,6 @@ const AddRecipesModal = ({ collectionId, currentRecipeIds, onClose, onAdd, theme
                       {isSelected && "✓"}
                     </div>
 
-                    {/* Image */}
                     <img
                       src={recipe.image || "https://via.placeholder.com/60x60?text=🍽️"}
                       alt=""
@@ -279,7 +282,6 @@ const AddRecipesModal = ({ collectionId, currentRecipeIds, onClose, onAdd, theme
                       }}
                     />
 
-                    {/* Info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div
                         style={{
@@ -297,10 +299,7 @@ const AddRecipesModal = ({ collectionId, currentRecipeIds, onClose, onAdd, theme
                       </div>
                     </div>
 
-                    {/* Favorite indicator */}
-                    {recipe.favorite && (
-                      <span style={{ fontSize: "16px" }}>⭐</span>
-                    )}
+                    {recipe.favorite && <span style={{ fontSize: "16px" }}>⭐</span>}
                   </div>
                 );
               })}
@@ -308,7 +307,6 @@ const AddRecipesModal = ({ collectionId, currentRecipeIds, onClose, onAdd, theme
           )}
         </div>
 
-        {/* Footer */}
         <div
           style={{
             padding: "16px 24px",
@@ -346,7 +344,9 @@ const AddRecipesModal = ({ collectionId, currentRecipeIds, onClose, onAdd, theme
               fontWeight: 600,
             }}
           >
-            {adding ? "Adding..." : `Add ${selectedIds.length} Recipe${selectedIds.length !== 1 ? "s" : ""}`}
+            {adding
+              ? "Adding..."
+              : `Add ${selectedIds.length} Recipe${selectedIds.length !== 1 ? "s" : ""}`}
           </button>
         </div>
       </div>
@@ -369,7 +369,6 @@ const CollectionRecipeCard = ({ recipe, onRemove, onView, removing, theme }) => 
         flexDirection: "column",
       }}
     >
-      {/* Image */}
       <div
         onClick={() => onView(recipe._id)}
         style={{
@@ -415,7 +414,6 @@ const CollectionRecipeCard = ({ recipe, onRemove, onView, removing, theme }) => 
         )}
       </div>
 
-      {/* Content */}
       <div style={{ padding: "14px", flex: 1, display: "flex", flexDirection: "column" }}>
         <h3
           onClick={() => onView(recipe._id)}
@@ -434,7 +432,14 @@ const CollectionRecipeCard = ({ recipe, onRemove, onView, removing, theme }) => 
           {recipe.name}
         </h3>
 
-        <div style={{ fontSize: "13px", color: theme.textMuted, marginBottom: "12px", marginTop: "auto" }}>
+        <div
+          style={{
+            fontSize: "13px",
+            color: theme.textMuted,
+            marginBottom: "12px",
+            marginTop: "auto",
+          }}
+        >
           {recipe.ingredients?.length || 0} ingredients
         </div>
 
@@ -490,19 +495,20 @@ const CollectionDetail = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [removingId, setRemovingId] = useState(null);
 
-  // Toast
   const [toast, setToast] = useState(null);
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
 
-  // Fetch collection data
   const fetchCollection = useCallback(async () => {
     try {
       setLoading(true);
+
       const res = await fetch(`${API_BASE_URL}/api/collections/${id}`, {
-        credentials: "include",
+        headers: {
+          ...getAuthHeaders(),
+        },
       });
 
       if (!res.ok) throw new Error("Collection not found");
@@ -522,15 +528,17 @@ const CollectionDetail = () => {
     fetchCollection();
   }, [fetchCollection]);
 
-  // Remove recipe from collection
   const handleRemoveRecipe = async (recipeId) => {
     setRemovingId(recipeId);
+
     try {
       const res = await fetch(
         `${API_BASE_URL}/api/collections/${id}/recipes/${recipeId}`,
         {
           method: "DELETE",
-          credentials: "include",
+          headers: {
+            ...getAuthHeaders(),
+          },
         }
       );
 
@@ -546,18 +554,15 @@ const CollectionDetail = () => {
     }
   };
 
-  // View recipe
   const handleViewRecipe = (recipeId) => {
     navigate(`/recipes/${recipeId}`);
   };
 
-  // Handle recipes added
   const handleRecipesAdded = (count) => {
     fetchCollection();
     showToast(`Added ${count} recipe${count !== 1 ? "s" : ""} to collection!`, "success");
   };
 
-  // Loading state
   if (loading) {
     return (
       <div style={{ textAlign: "center", padding: "60px", color: theme.textSecondary }}>
@@ -566,7 +571,6 @@ const CollectionDetail = () => {
     );
   }
 
-  // Not found
   if (!collection) {
     return (
       <div style={{ textAlign: "center", padding: "60px" }}>
@@ -594,7 +598,6 @@ const CollectionDetail = () => {
 
   return (
     <>
-      {/* Toast */}
       {toast && (
         <div
           style={{
@@ -617,7 +620,6 @@ const CollectionDetail = () => {
         </div>
       )}
 
-      {/* Add Recipes Modal */}
       {showAddModal && (
         <AddRecipesModal
           collectionId={id}
@@ -629,7 +631,6 @@ const CollectionDetail = () => {
       )}
 
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        {/* Header */}
         <div
           style={{
             display: "flex",
@@ -639,7 +640,6 @@ const CollectionDetail = () => {
             flexWrap: "wrap",
           }}
         >
-          {/* Back button */}
           <button
             onClick={() => navigate("/collections")}
             style={{
@@ -655,7 +655,6 @@ const CollectionDetail = () => {
             ← Back
           </button>
 
-          {/* Collection info */}
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
               <span
@@ -683,7 +682,6 @@ const CollectionDetail = () => {
             </div>
           </div>
 
-          {/* Add Recipes Button */}
           <button
             onClick={() => setShowAddModal(true)}
             style={{
@@ -706,7 +704,6 @@ const CollectionDetail = () => {
           </button>
         </div>
 
-        {/* Content */}
         {recipes.length === 0 ? (
           <div
             style={{

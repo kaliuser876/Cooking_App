@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config";
 import { useTheme } from "../context/ThemeContext";
+import { getAuthHeaders } from "../context/AuthContext";
 import CollectionSelector from "./CollectionSelector";
 
 const RecipeDetail = () => {
@@ -12,14 +13,8 @@ const RecipeDetail = () => {
 
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // Track checked ingredients
   const [checkedItems, setCheckedItems] = useState({});
-
-  // Sharing state
   const [sharing, setSharing] = useState(false);
-
-  // Toast state
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = "success") => {
@@ -31,8 +26,11 @@ const RecipeDetail = () => {
     const fetchRecipe = async () => {
       try {
         setLoading(true);
+
         const res = await fetch(`${API_BASE_URL}/api/recipes/${id}`, {
-          credentials: "include",
+          headers: {
+            ...getAuthHeaders(),
+          },
         });
 
         if (!res.ok) throw new Error("Recipe not found");
@@ -40,7 +38,6 @@ const RecipeDetail = () => {
         const data = await res.json();
         setRecipe(data);
 
-        // Initialize all ingredients as unchecked
         if (data.ingredients) {
           const initialCheckedState = {};
           data.ingredients.forEach((_, index) => {
@@ -59,7 +56,6 @@ const RecipeDetail = () => {
     fetchRecipe();
   }, [id]);
 
-  // Toggle checkbox
   const handleCheckboxChange = (index) => {
     setCheckedItems((prev) => ({
       ...prev,
@@ -67,13 +63,10 @@ const RecipeDetail = () => {
     }));
   };
 
-  // Add unchecked ingredients to shopping list
   const handleAddToShoppingList = async () => {
     if (!recipe?.ingredients?.length) return;
 
-    const unchecked = recipe.ingredients.filter(
-      (_, index) => !checkedItems[index]
-    );
+    const unchecked = recipe.ingredients.filter((_, index) => !checkedItems[index]);
 
     if (unchecked.length === 0) {
       showToast("No ingredients selected to add.", "error");
@@ -85,8 +78,8 @@ const RecipeDetail = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
-        credentials: "include",
         body: JSON.stringify({ items: unchecked }),
       });
 
@@ -99,12 +92,10 @@ const RecipeDetail = () => {
     }
   };
 
-  // Handle Edit - navigates to edit page
   const handleEdit = () => {
     navigate(`/recipes/${id}/edit`);
   };
 
-  // Handle Delete - deletes recipe and navigates home
   const handleDelete = async () => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this recipe?"
@@ -115,7 +106,9 @@ const RecipeDetail = () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/recipes/${id}`, {
         method: "DELETE",
-        credentials: "include",
+        headers: {
+          ...getAuthHeaders(),
+        },
       });
 
       if (!res.ok) throw new Error("Failed to delete recipe");
@@ -128,20 +121,21 @@ const RecipeDetail = () => {
     }
   };
 
-  // Handle Toggle Share
   const handleToggleShare = async () => {
     setSharing(true);
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/recipes/${id}/share`, {
         method: "PATCH",
-        credentials: "include",
+        headers: {
+          ...getAuthHeaders(),
+        },
       });
 
       if (!res.ok) throw new Error("Failed to update sharing");
 
       const data = await res.json();
 
-      // Update local recipe state
       setRecipe((prev) => ({
         ...prev,
         isPublic: data.isPublic,
@@ -149,7 +143,6 @@ const RecipeDetail = () => {
       }));
 
       if (data.shareUrl) {
-        // Copy to clipboard
         navigator.clipboard.writeText(data.shareUrl);
         showToast("Share link copied to clipboard!", "success");
       } else {
@@ -163,7 +156,6 @@ const RecipeDetail = () => {
     }
   };
 
-  // Copy share link to clipboard
   const handleCopyShareLink = () => {
     if (!recipe?.shareToken) return;
     const link = `${window.location.origin}/shared/${recipe.shareToken}`;
@@ -171,12 +163,13 @@ const RecipeDetail = () => {
     showToast("Link copied to clipboard!", "success");
   };
 
-  // Toggle favorite
   const handleToggleFavorite = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/recipes/${id}/favorite`, {
         method: "PATCH",
-        credentials: "include",
+        headers: {
+          ...getAuthHeaders(),
+        },
       });
 
       if (!res.ok) throw new Error("Failed to toggle favorite");
@@ -193,12 +186,10 @@ const RecipeDetail = () => {
     }
   };
 
-  // Handle collection update
   const handleCollectionUpdate = (updatedRecipe) => {
     setRecipe(updatedRecipe);
   };
 
-  // Loading state
   if (loading) {
     return (
       <div
@@ -213,7 +204,6 @@ const RecipeDetail = () => {
     );
   }
 
-  // Not found state
   if (!recipe) {
     return (
       <div
@@ -241,10 +231,8 @@ const RecipeDetail = () => {
     );
   }
 
-  // Recipe loaded - render content
   return (
     <>
-      {/* Toast Notification */}
       {toast && (
         <div
           style={{
@@ -275,7 +263,6 @@ const RecipeDetail = () => {
       )}
 
       <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
-        {/* BUTTON GROUP */}
         <div
           style={{
             display: "flex",
@@ -321,7 +308,6 @@ const RecipeDetail = () => {
             {recipe.favorite ? "⭐ Favorited" : "☆ Favorite"}
           </button>
 
-          {/* Collection Selector */}
           <CollectionSelector
             recipeId={id}
             currentCollections={recipe.collections || []}
@@ -385,7 +371,6 @@ const RecipeDetail = () => {
           </button>
         </div>
 
-        {/* SHARE LINK SECTION */}
         {recipe.isPublic && recipe.shareToken && (
           <div
             style={{
@@ -452,12 +437,10 @@ const RecipeDetail = () => {
           </div>
         )}
 
-        {/* RECIPE TITLE */}
         <h1 style={{ textAlign: "center", marginBottom: "16px", color: theme.text }}>
           {recipe.name}
         </h1>
 
-        {/* COLLECTIONS */}
         {recipe.collections && recipe.collections.length > 0 && (
           <div
             style={{
@@ -491,7 +474,6 @@ const RecipeDetail = () => {
           </div>
         )}
 
-        {/* TAGS */}
         {recipe.tags && recipe.tags.length > 0 && (
           <div
             style={{
@@ -519,7 +501,6 @@ const RecipeDetail = () => {
           </div>
         )}
 
-        {/* IMAGE */}
         <img
           src={recipe.image || "https://via.placeholder.com/600x400?text=No+Image"}
           alt={recipe.name}
@@ -532,7 +513,6 @@ const RecipeDetail = () => {
           }}
         />
 
-        {/* SOURCE URL */}
         {recipe.url && (
           <div style={{ textAlign: "center", marginBottom: "24px" }}>
             <a
@@ -550,7 +530,6 @@ const RecipeDetail = () => {
           </div>
         )}
 
-        {/* INGREDIENTS */}
         <section
           style={{
             marginBottom: "32px",
@@ -608,9 +587,7 @@ const RecipeDetail = () => {
                       />
                       <span
                         style={{
-                          textDecoration: checkedItems[index]
-                            ? "line-through"
-                            : "none",
+                          textDecoration: checkedItems[index] ? "line-through" : "none",
                           opacity: checkedItems[index] ? 0.5 : 1,
                           color: "inherit",
                           fontSize: "16px",
@@ -623,7 +600,6 @@ const RecipeDetail = () => {
                 ))}
               </ul>
 
-              {/* ADD TO SHOPPING LIST BUTTON */}
               <button
                 onClick={handleAddToShoppingList}
                 style={{
@@ -660,7 +636,6 @@ const RecipeDetail = () => {
           )}
         </section>
 
-        {/* INSTRUCTIONS */}
         <section
           style={{
             padding: "20px",

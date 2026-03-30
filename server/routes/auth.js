@@ -5,14 +5,6 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "../utils/email.js
 
 const router = express.Router();
 
-// Cookie options
-const cookieOptions = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
-};
-
 // POST /api/auth/register
 router.post("/register", async (req, res) => {
   try {
@@ -26,15 +18,13 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "Password must be at least 6 characters." });
     }
 
-    // Check if user exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
 
     if (existingUser) {
       if (!existingUser.isVerified) {
-        // Resend verification email
         const verificationToken = generateRandomToken();
         existingUser.verificationToken = verificationToken;
-        existingUser.verificationTokenExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+        existingUser.verificationTokenExpires = Date.now() + 24 * 60 * 60 * 1000;
         await existingUser.save();
 
         await sendVerificationEmail(existingUser.email, verificationToken);
@@ -48,25 +38,21 @@ router.post("/register", async (req, res) => {
       return res.status(409).json({ message: "An account with this email already exists." });
     }
 
-    // Create verification token
     const verificationToken = generateRandomToken();
 
-    // Create new user
     const user = new User({
       email: email.toLowerCase(),
       password,
       verificationToken,
-      verificationTokenExpires: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+      verificationTokenExpires: Date.now() + 24 * 60 * 60 * 1000,
     });
 
     await user.save();
 
-    // Send verification email
     try {
       await sendVerificationEmail(user.email, verificationToken);
     } catch (emailErr) {
       console.error("Failed to send verification email:", emailErr);
-      // Still create the account, but notify user about email issue
     }
 
     res.status(201).json({
@@ -102,12 +88,11 @@ router.post("/verify-email", async (req, res) => {
     user.verificationTokenExpires = null;
     await user.save();
 
-    // Generate JWT and set cookie
     const jwtToken = generateToken(user._id);
-    res.cookie("token", jwtToken, cookieOptions);
 
     res.json({
       message: "Email verified successfully!",
+      token: jwtToken,
       user: {
         id: user._id,
         email: user.email,
@@ -141,7 +126,6 @@ router.post("/login", async (req, res) => {
     }
 
     if (!user.isVerified) {
-      // Resend verification email
       const verificationToken = generateRandomToken();
       user.verificationToken = verificationToken;
       user.verificationTokenExpires = Date.now() + 24 * 60 * 60 * 1000;
@@ -155,12 +139,11 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // Generate JWT and set cookie
     const token = generateToken(user._id);
-    res.cookie("token", token, cookieOptions);
 
     res.json({
       message: "Logged in successfully!",
+      token,
       user: {
         id: user._id,
         email: user.email,
@@ -174,15 +157,10 @@ router.post("/login", async (req, res) => {
 
 // POST /api/auth/logout
 router.post("/logout", (req, res) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  });
   res.json({ message: "Logged out successfully." });
 });
 
-// GET /api/auth/me - Get current user
+// GET /api/auth/me
 router.get("/me", protect, async (req, res) => {
   res.json({
     user: {
@@ -203,20 +181,17 @@ router.post("/forgot-password", async (req, res) => {
 
     const user = await User.findOne({ email: email.toLowerCase() });
 
-    // Don't reveal if user exists or not for security
     if (!user) {
       return res.json({
         message: "If an account with that email exists, a password reset link has been sent.",
       });
     }
 
-    // Generate reset token
     const resetToken = generateRandomToken();
     user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // 1 hour
+    user.resetPasswordExpires = Date.now() + 60 * 60 * 1000;
     await user.save();
 
-    // Send reset email
     await sendPasswordResetEmail(user.email, resetToken);
 
     res.json({

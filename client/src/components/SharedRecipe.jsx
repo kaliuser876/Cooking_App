@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config";
 import { useTheme } from "../context/ThemeContext";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, getAuthHeaders } from "../context/AuthContext";
 
 const SharedRecipe = () => {
   const { shareToken } = useParams();
@@ -51,13 +51,14 @@ const SharedRecipe = () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/recipes/copy/${shareToken}`, {
         method: "POST",
-        credentials: "include",
+        headers: {
+          ...getAuthHeaders(),
+        },
       });
 
       const data = await res.json();
 
       if (res.status === 409) {
-        // Recipe already exists
         setAlreadyExists(data);
         setCopying(false);
         return;
@@ -87,14 +88,10 @@ const SharedRecipe = () => {
   };
 
   const handleSaveAnyway = async () => {
-    // Force save with a modified name
     setCopying(true);
     setAlreadyExists(null);
 
     try {
-      // We need to manually create the recipe with a different approach
-      // For now, let's just navigate to the existing one
-      // In a full implementation, you could add a query param to force save
       alert("Please rename the existing recipe first, then try again.");
       setCopying(false);
     } catch (err) {
@@ -163,7 +160,6 @@ const SharedRecipe = () => {
         color: theme.text,
       }}
     >
-      {/* Header Banner */}
       <div
         style={{
           backgroundColor: theme.buttonPrimary,
@@ -185,10 +181,8 @@ const SharedRecipe = () => {
       </div>
 
       <div style={{ maxWidth: "800px", margin: "0 auto", padding: "24px 16px" }}>
-        {/* Recipe Name */}
         <h1 style={{ textAlign: "center", marginBottom: "16px" }}>{recipe.name}</h1>
 
-        {/* Image */}
         {recipe.image && (
           <img
             src={recipe.image}
@@ -203,7 +197,6 @@ const SharedRecipe = () => {
           />
         )}
 
-        {/* Already Exists Warning */}
         {alreadyExists && (
           <div
             style={{
@@ -256,7 +249,6 @@ const SharedRecipe = () => {
           </div>
         )}
 
-        {/* Save Button */}
         {!alreadyExists && (
           <div style={{ textAlign: "center", marginBottom: "32px" }}>
             {copied ? (
@@ -306,7 +298,6 @@ const SharedRecipe = () => {
           </div>
         )}
 
-        {/* Tags */}
         {recipe.tags && recipe.tags.length > 0 && (
           <div
             style={{
@@ -334,7 +325,6 @@ const SharedRecipe = () => {
           </div>
         )}
 
-        {/* Ingredients */}
         <section style={{ marginBottom: "32px" }}>
           <h2
             style={{
@@ -354,7 +344,6 @@ const SharedRecipe = () => {
           </ul>
         </section>
 
-        {/* Instructions */}
         <section>
           <h2
             style={{
@@ -376,7 +365,6 @@ const SharedRecipe = () => {
           </ol>
         </section>
 
-        {/* Back to Home */}
         {user && (
           <div style={{ textAlign: "center", marginTop: "40px" }}>
             <button

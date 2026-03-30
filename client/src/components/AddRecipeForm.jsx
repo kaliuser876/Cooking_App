@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config";
+import { getAuthHeaders } from "../context/AuthContext";
 
 const AddRecipeForm = () => {
   const [url, setUrl] = useState("");
@@ -14,58 +15,59 @@ const AddRecipeForm = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  const navigate = useNavigate(); // <-- added
+  const navigate = useNavigate();
 
   // 🔍 SCRAPE RECIPE
-const handleScrape = async () => {
-  const trimmedUrl = url.trim();
-  if (!trimmedUrl) return;
+  const handleScrape = async () => {
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) return;
 
-  setLoading(true);
-  setError(null);
+    setLoading(true);
+    setError(null);
 
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/recipes/scrape`, {
-      credentials: "include",
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ url: trimmedUrl }),
-    });
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/recipes/scrape`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ url: trimmedUrl }),
+      });
 
-    if (!res.ok) throw new Error("Failed to scrape recipe");
+      if (!res.ok) throw new Error("Failed to scrape recipe");
 
-    const data = await res.json();
+      const data = await res.json();
 
-    setRecipe(data);
-    setName(data.name || "");
-    setIngredients(data.ingredients || []);
-    setInstructions(data.instructions || []);
-    setUrl(trimmedUrl);
-  } catch (err) {
-    console.error(err);
-    setError(err.message || "Error saving recipe");
-  } finally {
-    setLoading(false);
-  }
-};
+      setRecipe(data);
+      setName(data.name || "");
+      setIngredients(data.ingredients || []);
+      setInstructions(data.instructions || []);
+      setUrl(trimmedUrl);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Error scraping recipe");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 💾 SAVE RECIPE
   const handleSave = async () => {
     if (!recipe || !name.trim() || ingredients.length === 0) {
-  setError("Recipe must have a name and at least one ingredient");
-  return;
-}
+      setError("Recipe must have a name and at least one ingredient");
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/recipes`, {
-        credentials: "include",
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
           name,
@@ -83,11 +85,10 @@ const handleScrape = async () => {
 
       const savedRecipe = await res.json();
 
-      // ✅ Redirect to the saved recipe page
       navigate(`/recipes/${savedRecipe._id}`);
     } catch (err) {
       console.error(err);
-      setError("Error saving recipe");
+      setError(err.message || "Error saving recipe");
     } finally {
       setSaving(false);
     }
@@ -97,10 +98,8 @@ const handleScrape = async () => {
     <div style={{ maxWidth: "800px", margin: "0 auto" }}>
       <h2>Add Recipe</h2>
 
-      {/* ERROR */}
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {/* URL INPUT */}
       <div style={{ marginBottom: "20px" }}>
         <input
           type="text"
@@ -117,10 +116,8 @@ const handleScrape = async () => {
         </button>
       </div>
 
-      {/* SHOW RECIPE AFTER SCRAPE */}
       {recipe && (
         <div style={{ borderTop: "1px solid #ccc", paddingTop: "20px" }}>
-          {/* TITLE */}
           <h1 style={{ textAlign: "center" }}>
             <input
               value={name}
@@ -135,7 +132,6 @@ const handleScrape = async () => {
             />
           </h1>
 
-          {/* IMAGE */}
           {recipe.image && (
             <img
               src={recipe.image}
@@ -150,7 +146,6 @@ const handleScrape = async () => {
             />
           )}
 
-          {/* INGREDIENTS */}
           <div style={{ marginBottom: "20px" }}>
             <h3>Ingredients</h3>
             <textarea
@@ -161,27 +156,23 @@ const handleScrape = async () => {
                     .split("\n")
                     .map((line) => line.trim())
                     .filter(Boolean)
-                ) 
+                )
               }
               rows={10}
               style={{ width: "100%", padding: "10px" }}
             />
           </div>
 
-          {/* INSTRUCTIONS */}
           <div style={{ marginBottom: "20px" }}>
             <h3>Instructions</h3>
             <textarea
               value={instructions.join("\n")}
-              onChange={(e) =>
-                setInstructions(e.target.value.split("\n"))
-              }
+              onChange={(e) => setInstructions(e.target.value.split("\n"))}
               rows={10}
               style={{ width: "100%", padding: "10px" }}
             />
           </div>
 
-          {/* SAVE BUTTON */}
           <button
             onClick={handleSave}
             disabled={saving}

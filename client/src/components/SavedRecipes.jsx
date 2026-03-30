@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config";
 import { useTheme } from "../context/ThemeContext";
+import { getAuthHeaders } from "../context/AuthContext";
 
 const RECIPES_PER_PAGE = 20;
 
@@ -183,7 +184,6 @@ const RecipeCard = ({
         e.currentTarget.style.boxShadow = `0 4px 12px ${theme.shadow}`;
       }}
     >
-      {/* Image */}
       <div
         style={{
           position: "relative",
@@ -210,7 +210,6 @@ const RecipeCard = ({
           }}
         />
 
-        {/* Favorite Star */}
         <div
           style={{
             position: "absolute",
@@ -232,9 +231,7 @@ const RecipeCard = ({
         </div>
       </div>
 
-      {/* Content */}
       <div style={{ padding: "16px", flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* Title */}
         <h3
           style={{
             margin: "0 0 8px 0",
@@ -251,7 +248,6 @@ const RecipeCard = ({
           {recipe.name}
         </h3>
 
-        {/* Tags */}
         {recipe.tags && recipe.tags.length > 0 && (
           <div
             style={{
@@ -278,7 +274,6 @@ const RecipeCard = ({
           </div>
         )}
 
-        {/* Meta info */}
         <div
           style={{
             fontSize: "13px",
@@ -290,9 +285,7 @@ const RecipeCard = ({
           {recipe.ingredients?.length || 0} ingredients
         </div>
 
-        {/* Buttons */}
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          {/* Add to Shopping List Button */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -320,7 +313,6 @@ const RecipeCard = ({
             {isAddingToList ? "Adding..." : "Add to List"}
           </button>
 
-          {/* Edit and Delete Buttons */}
           <div style={{ display: "flex", gap: "8px" }}>
             <button
               onClick={(e) => {
@@ -516,7 +508,11 @@ const SavedRecipes = () => {
   // Fetch tags
   const fetchTags = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/recipes/tags`, { credentials: "include" });
+      const res = await fetch(`${API_BASE_URL}/api/recipes/tags`, {
+        headers: {
+          ...getAuthHeaders(),
+        },
+      });
       if (res.ok) {
         const data = await res.json();
         setAllTags(data);
@@ -546,7 +542,11 @@ const SavedRecipes = () => {
           params.set("tag", selectedTag);
         }
 
-        const res = await fetch(`${API_BASE_URL}/api/recipes?${params.toString()}`, { credentials: "include" });
+        const res = await fetch(`${API_BASE_URL}/api/recipes?${params.toString()}`, {
+          headers: {
+            ...getAuthHeaders(),
+          },
+        });
 
         if (!res.ok) throw new Error("Failed to fetch recipes");
 
@@ -593,8 +593,10 @@ const SavedRecipes = () => {
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/recipes/${id}`, {
-        credentials: "include",
         method: "DELETE",
+        headers: {
+          ...getAuthHeaders(),
+        },
       });
 
       if (!res.ok) throw new Error("Failed to delete recipe");
@@ -615,8 +617,10 @@ const SavedRecipes = () => {
   const handleToggleFavorite = async (id) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/recipes/${id}/favorite`, {
-        credentials: "include",
         method: "PATCH",
+        headers: {
+          ...getAuthHeaders(),
+        },
       });
 
       if (!res.ok) throw new Error("Failed to toggle favorite");
@@ -648,9 +652,11 @@ const SavedRecipes = () => {
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/shopping-list`, {
-        credentials: "include",
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
         body: JSON.stringify({ items: recipe.ingredients }),
       });
 
@@ -684,17 +690,9 @@ const SavedRecipes = () => {
 
   return (
     <>
-      {/* Toast Notification */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+      <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
 
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        {/* Header */}
         <div
           style={{
             display: "flex",
@@ -716,7 +714,6 @@ const SavedRecipes = () => {
           </div>
         </div>
 
-        {/* Toolbar */}
         <div
           style={{
             display: "flex",
@@ -730,7 +727,6 @@ const SavedRecipes = () => {
             marginBottom: "24px",
           }}
         >
-          {/* Search */}
           <div
             style={{
               display: "flex",
@@ -758,7 +754,6 @@ const SavedRecipes = () => {
             />
           </div>
 
-          {/* Tag Filter */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <label style={{ fontWeight: 600, fontSize: "14px", color: theme.text }}>
               Tag:
@@ -785,7 +780,6 @@ const SavedRecipes = () => {
             </select>
           </div>
 
-          {/* Clear Filters */}
           {(searchQuery || selectedTag) && (
             <button
               onClick={handleClearFilters}
@@ -805,7 +799,6 @@ const SavedRecipes = () => {
           )}
         </div>
 
-        {/* Content */}
         {loading ? (
           <div
             style={{
@@ -876,7 +869,6 @@ const SavedRecipes = () => {
           </div>
         ) : (
           <>
-            {/* Recipe Grid */}
             <div
               style={{
                 display: "grid",
@@ -899,7 +891,6 @@ const SavedRecipes = () => {
               ))}
             </div>
 
-            {/* Pagination */}
             {pagination && (
               <Pagination
                 pagination={pagination}

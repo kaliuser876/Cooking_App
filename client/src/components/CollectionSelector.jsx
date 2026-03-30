@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { API_BASE_URL } from "../config";
 import { useTheme } from "../context/ThemeContext";
+import { getAuthHeaders } from "../context/AuthContext";
 
 const CollectionSelector = ({ recipeId, currentCollections = [], onUpdate }) => {
   const { theme } = useTheme();
@@ -11,18 +12,19 @@ const CollectionSelector = ({ recipeId, currentCollections = [], onUpdate }) => 
   const [showDropdown, setShowDropdown] = useState(false);
   const [updating, setUpdating] = useState(null);
 
-  // Get IDs of current collections
   const currentCollectionIds = currentCollections.map((c) =>
     typeof c === "string" ? c : c._id
   );
 
-  // Fetch all collections
   useEffect(() => {
     const fetchCollections = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/api/collections`, {
-          credentials: "include",
+          headers: {
+            ...getAuthHeaders(),
+          },
         });
+
         if (res.ok) {
           const data = await res.json();
           setCollections(data);
@@ -37,15 +39,17 @@ const CollectionSelector = ({ recipeId, currentCollections = [], onUpdate }) => 
     fetchCollections();
   }, []);
 
-  // Add recipe to collection
   const handleAdd = async (collectionId) => {
     setUpdating(collectionId);
+
     try {
       const res = await fetch(
         `${API_BASE_URL}/api/collections/${collectionId}/recipes/${recipeId}`,
         {
           method: "POST",
-          credentials: "include",
+          headers: {
+            ...getAuthHeaders(),
+          },
         }
       );
 
@@ -61,15 +65,17 @@ const CollectionSelector = ({ recipeId, currentCollections = [], onUpdate }) => 
     }
   };
 
-  // Remove recipe from collection
   const handleRemove = async (collectionId) => {
     setUpdating(collectionId);
+
     try {
       const res = await fetch(
         `${API_BASE_URL}/api/collections/${collectionId}/recipes/${recipeId}`,
         {
           method: "DELETE",
-          credentials: "include",
+          headers: {
+            ...getAuthHeaders(),
+          },
         }
       );
 
@@ -85,7 +91,6 @@ const CollectionSelector = ({ recipeId, currentCollections = [], onUpdate }) => 
     }
   };
 
-  // Toggle collection
   const handleToggle = (collectionId) => {
     if (currentCollectionIds.includes(collectionId)) {
       handleRemove(collectionId);
@@ -150,7 +155,6 @@ const CollectionSelector = ({ recipeId, currentCollections = [], onUpdate }) => 
 
       {showDropdown && (
         <>
-          {/* Backdrop */}
           <div
             onClick={() => setShowDropdown(false)}
             style={{
@@ -163,7 +167,6 @@ const CollectionSelector = ({ recipeId, currentCollections = [], onUpdate }) => 
             }}
           />
 
-          {/* Dropdown */}
           <div
             style={{
               position: "absolute",
@@ -232,7 +235,6 @@ const CollectionSelector = ({ recipeId, currentCollections = [], onUpdate }) => 
                       }
                     }}
                   >
-                    {/* Checkbox */}
                     <div
                       style={{
                         width: "20px",
@@ -251,10 +253,8 @@ const CollectionSelector = ({ recipeId, currentCollections = [], onUpdate }) => 
                       {isSelected && "✓"}
                     </div>
 
-                    {/* Icon */}
                     <span style={{ fontSize: "20px" }}>{collection.icon}</span>
 
-                    {/* Name */}
                     <span
                       style={{
                         flex: 1,
@@ -265,7 +265,6 @@ const CollectionSelector = ({ recipeId, currentCollections = [], onUpdate }) => 
                       {collection.name}
                     </span>
 
-                    {/* Recipe count */}
                     <span style={{ fontSize: "12px", color: theme.textMuted }}>
                       {collection.recipeCount} recipes
                     </span>
@@ -274,7 +273,6 @@ const CollectionSelector = ({ recipeId, currentCollections = [], onUpdate }) => 
               })}
             </div>
 
-            {/* Create new link */}
             <div
               style={{
                 borderTop: `1px solid ${theme.border}`,

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config";
 import { useTheme } from "../context/ThemeContext";
+import { getAuthHeaders } from "../context/AuthContext";
 
 const ICON_OPTIONS = ["📁", "🍳", "🥗", "🍰", "🍝", "🌮", "🍜", "🥘", "🍕", "🥪", "☕", "🎉", "❤️", "⭐"];
 const COLOR_OPTIONS = ["#4CAF50", "#2196F3", "#FF9800", "#E91E63", "#9C27B0", "#00BCD4", "#FF5722", "#607D8B"];
@@ -93,6 +94,7 @@ const CollectionModal = ({ collection, onSave, onClose, theme }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!name.trim()) {
       setError("Collection name is required");
       return;
@@ -148,7 +150,6 @@ const CollectionModal = ({ collection, onSave, onClose, theme }) => {
         )}
 
         <form onSubmit={handleSubmit}>
-          {/* Name */}
           <div style={{ marginBottom: "16px" }}>
             <label style={{ display: "block", marginBottom: "6px", color: theme.text, fontWeight: 600 }}>
               Name
@@ -171,7 +172,6 @@ const CollectionModal = ({ collection, onSave, onClose, theme }) => {
             />
           </div>
 
-          {/* Icon */}
           <div style={{ marginBottom: "16px" }}>
             <label style={{ display: "block", marginBottom: "6px", color: theme.text, fontWeight: 600 }}>
               Icon
@@ -197,7 +197,6 @@ const CollectionModal = ({ collection, onSave, onClose, theme }) => {
             </div>
           </div>
 
-          {/* Color */}
           <div style={{ marginBottom: "24px" }}>
             <label style={{ display: "block", marginBottom: "6px", color: theme.text, fontWeight: 600 }}>
               Color
@@ -222,7 +221,6 @@ const CollectionModal = ({ collection, onSave, onClose, theme }) => {
             </div>
           </div>
 
-          {/* Buttons */}
           <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
             <button
               type="button"
@@ -270,14 +268,18 @@ const Collections = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingCollection, setEditingCollection] = useState(null);
 
-  // Fetch collections
   const fetchCollections = async () => {
     try {
       setLoading(true);
+
       const res = await fetch(`${API_BASE_URL}/api/collections`, {
-        credentials: "include",
+        headers: {
+          ...getAuthHeaders(),
+        },
       });
+
       if (!res.ok) throw new Error("Failed to fetch collections");
+
       const data = await res.json();
       setCollections(data);
     } catch (err) {
@@ -291,12 +293,13 @@ const Collections = () => {
     fetchCollections();
   }, []);
 
-  // Create collection
   const handleCreate = async (data) => {
     const res = await fetch(`${API_BASE_URL}/api/collections`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
       body: JSON.stringify(data),
     });
 
@@ -309,12 +312,13 @@ const Collections = () => {
     setCollections((prev) => [...prev, newCollection]);
   };
 
-  // Update collection
   const handleUpdate = async (data) => {
     const res = await fetch(`${API_BASE_URL}/api/collections/${editingCollection._id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
       body: JSON.stringify(data),
     });
 
@@ -329,7 +333,6 @@ const Collections = () => {
     );
   };
 
-  // Delete collection
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this collection? Recipes will not be deleted.")) {
       return;
@@ -338,7 +341,9 @@ const Collections = () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/collections/${id}`, {
         method: "DELETE",
-        credentials: "include",
+        headers: {
+          ...getAuthHeaders(),
+        },
       });
 
       if (!res.ok) throw new Error("Failed to delete collection");
@@ -350,12 +355,10 @@ const Collections = () => {
     }
   };
 
-  // View collection
   const handleView = (id) => {
     navigate(`/collections/${id}`);
   };
 
-  // Open modal for create/edit
   const openCreateModal = () => {
     setEditingCollection(null);
     setShowModal(true);
@@ -373,7 +376,6 @@ const Collections = () => {
 
   return (
     <>
-      {/* Modal */}
       {showModal && (
         <CollectionModal
           collection={editingCollection}
@@ -384,7 +386,6 @@ const Collections = () => {
       )}
 
       <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-        {/* Header */}
         <div
           style={{
             display: "flex",
@@ -421,7 +422,6 @@ const Collections = () => {
           </button>
         </div>
 
-        {/* Content */}
         {loading ? (
           <div style={{ textAlign: "center", padding: "60px", color: theme.textSecondary }}>
             Loading collections...

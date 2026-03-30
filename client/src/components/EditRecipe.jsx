@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config";
+import { getAuthHeaders } from "../context/AuthContext";
 
 const EditRecipe = () => {
   const { id } = useParams();
@@ -11,7 +12,6 @@ const EditRecipe = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  // Form state
   const [name, setName] = useState("");
   const [image, setImage] = useState("");
   const [ingredients, setIngredients] = useState([""]);
@@ -19,11 +19,15 @@ const EditRecipe = () => {
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState("");
 
-  // Fetch existing recipe data
   useEffect(() => {
     const fetchRecipe = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/recipes/${id}`, { credentials: "include" });
+        const res = await fetch(`${API_BASE_URL}/api/recipes/${id}`, {
+          headers: {
+            ...getAuthHeaders(),
+          },
+        });
+
         if (!res.ok) throw new Error("Recipe not found");
 
         const data = await res.json();
@@ -43,7 +47,6 @@ const EditRecipe = () => {
     fetchRecipe();
   }, [id]);
 
-  // Handle ingredient changes
   const handleIngredientChange = (index, value) => {
     const updated = [...ingredients];
     updated[index] = value;
@@ -59,7 +62,6 @@ const EditRecipe = () => {
     setIngredients(ingredients.filter((_, i) => i !== index));
   };
 
-  // Handle instruction changes
   const handleInstructionChange = (index, value) => {
     const updated = [...instructions];
     updated[index] = value;
@@ -75,7 +77,6 @@ const EditRecipe = () => {
     setInstructions(instructions.filter((_, i) => i !== index));
   };
 
-  // Handle tag changes
   const handleAddTag = () => {
     const trimmedTag = tagInput.trim().toLowerCase();
     if (trimmedTag && !tags.includes(trimmedTag)) {
@@ -95,13 +96,11 @@ const EditRecipe = () => {
     setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
 
-    // Filter out empty strings
     const cleanedIngredients = ingredients.filter((ing) => ing.trim() !== "");
     const cleanedInstructions = instructions.filter((inst) => inst.trim() !== "");
 
@@ -119,10 +118,10 @@ const EditRecipe = () => {
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/recipes/${id}`, {
-        credentials: "include",
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
           name: name.trim(),
@@ -148,7 +147,6 @@ const EditRecipe = () => {
     }
   };
 
-  // Styles
   const inputStyle = {
     width: "100%",
     padding: "10px",
@@ -173,7 +171,6 @@ const EditRecipe = () => {
 
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
-      {/* Header */}
       <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
         <button
           onClick={() => navigate(`/recipes/${id}`)}
@@ -192,7 +189,6 @@ const EditRecipe = () => {
       )}
 
       <form onSubmit={handleSubmit}>
-        {/* Recipe Name */}
         <div style={{ marginBottom: "20px" }}>
           <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
             Recipe Name *
@@ -207,7 +203,6 @@ const EditRecipe = () => {
           />
         </div>
 
-        {/* Image URL */}
         <div style={{ marginBottom: "20px" }}>
           <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
             Image URL
@@ -235,7 +230,6 @@ const EditRecipe = () => {
           )}
         </div>
 
-        {/* Tags */}
         <div style={{ marginBottom: "20px" }}>
           <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
             Tags
@@ -293,7 +287,6 @@ const EditRecipe = () => {
           </div>
         </div>
 
-        {/* Ingredients */}
         <div style={{ marginBottom: "20px" }}>
           <label style={{ display: "block", marginBottom: "10px", fontWeight: "bold" }}>
             Ingredients *
@@ -329,7 +322,6 @@ const EditRecipe = () => {
           </button>
         </div>
 
-        {/* Instructions */}
         <div style={{ marginBottom: "20px" }}>
           <label style={{ display: "block", marginBottom: "10px", fontWeight: "bold" }}>
             Instructions
@@ -375,7 +367,6 @@ const EditRecipe = () => {
           </button>
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={saving}

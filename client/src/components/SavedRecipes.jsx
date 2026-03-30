@@ -66,7 +66,7 @@ const Tag = ({ tag, onRemove, theme, removable = true }) => (
       <button
         onClick={(e) => {
           e.stopPropagation();
-          onRemove(tag);
+          onRemove?.(tag);
         }}
         style={{
           background: "none",
@@ -396,7 +396,7 @@ const Pagination = ({ pagination, onPageChange, theme }) => {
     return pages;
   };
 
-  if (totalPages <= 1) return null;
+  if (!pagination || totalPages <= 1) return null;
 
   return (
     <div
@@ -489,44 +489,44 @@ const SavedRecipes = () => {
   const [recipes, setRecipes] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState("");
   const [allTags, setAllTags] = useState([]);
 
-  // Toast notification state
   const [toast, setToast] = useState(null);
-
-  // Track which recipe is being added to shopping list
   const [addingToListId, setAddingToListId] = useState(null);
 
-  // Show toast notification
-  const showToast = (message, type = "success") => {
+  const showToast = useCallback((message, type = "success") => {
     setToast({ message, type });
-  };
+  }, []);
 
-  // Fetch tags
-  const fetchTags = async () => {
+  const fetchTags = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/recipes/tags`, {
         headers: {
           ...getAuthHeaders(),
         },
       });
-      if (res.ok) {
-        const data = await res.json();
-        setAllTags(data);
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch tags");
       }
+
+      const data = await res.json();
+      setAllTags(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch tags:", err);
+      setAllTags([]);
     }
-  };
+  }, []);
 
-  // Fetch recipes
   const fetchRecipes = useCallback(
     async (page = 1) => {
       try {
         setLoading(true);
+        setError("");
 
         const params = new URLSearchParams({
           page: page.toString(),
@@ -548,13 +548,19 @@ const SavedRecipes = () => {
           },
         });
 
-        if (!res.ok) throw new Error("Failed to fetch recipes");
+        const data = await res.json().catch(() => null);
 
-        const data = await res.json();
-        setRecipes(data.recipes);
-        setPagination(data.pagination);
+        if (!res.ok) {
+          throw new Error(data?.message || "Failed to fetch recipes");
+        }
+
+        setRecipes(Array.isArray(data?.recipes) ? data.recipes : []);
+        setPagination(data?.pagination || null);
       } catch (err) {
         console.error("Failed to fetch recipes:", err);
+        setRecipes([]);
+        setPagination(null);
+        setError(err?.message || "Failed to load recipes");
       } finally {
         setLoading(false);
       }
@@ -565,23 +571,20 @@ const SavedRecipes = () => {
   useEffect(() => {
     fetchRecipes(1);
     fetchTags();
-  }, []);
+  }, [fetchRecipes, fetchTags]);
 
-  // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchRecipes(1);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedTag]);
+  }, [searchQuery, selectedTag, fetchRecipes]);
 
-  // Handlers
   const handleView = (id) => {
     navigate(`/recipes/${id}`);
   };
 
-  // Navigate to the edit page instead of opening a modal
   const handleEdit = (recipe) => {
     navigate(`/recipes/${recipe._id}/edit`);
   };
@@ -599,18 +602,25 @@ const SavedRecipes = () => {
         },
       });
 
-      if (!res.ok) throw new Error("Failed to delete recipe");
+      const data = await res.json().catch(() => null);
 
-      setRecipes((prev) => prev.filter((r) => r._id !== id));
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to delete recipe");
+      }
+
+      const updatedRecipes = recipes.filter((r) => r._id !== id);
+      setRecipes(updatedRecipes);
 
       if (recipes.length === 1 && pagination?.currentPage > 1) {
         fetchRecipes(pagination.currentPage - 1);
+      } else {
+        fetchRecipes(pagination?.currentPage || 1);
       }
 
       showToast("Recipe deleted successfully!", "success");
     } catch (err) {
       console.error(err);
-      showToast("Failed to delete recipe", "error");
+      showToast(err?.message || "Failed to delete recipe", "error");
     }
   };
 
@@ -623,9 +633,11 @@ const SavedRecipes = () => {
         },
       });
 
-      if (!res.ok) throw new Error("Failed to toggle favorite");
+      const updatedRecipe = await res.json().catch(() => null);
 
-      const updatedRecipe = await res.json();
+      if (!res.ok) {
+        throw new Error(updatedRecipe?.message || "Failed to toggle favorite");
+      }
 
       setRecipes((prev) =>
         prev.map((r) => (r._id === updatedRecipe._id ? updatedRecipe : r))
@@ -637,11 +649,10 @@ const SavedRecipes = () => {
       );
     } catch (err) {
       console.error(err);
-      showToast("Failed to update favorite", "error");
+      showToast(err?.message || "Failed to update favorite", "error");
     }
   };
 
-  // Add recipe ingredients to shopping list
   const handleAddToShoppingList = async (recipe) => {
     if (!recipe.ingredients || recipe.ingredients.length === 0) {
       showToast("This recipe has no ingredients", "error");
@@ -660,8 +671,10 @@ const SavedRecipes = () => {
         body: JSON.stringify({ items: recipe.ingredients }),
       });
 
+      const data = await res.json().catch(() => null);
+
       if (!res.ok) {
-        throw new Error("Failed to add ingredients to shopping list");
+        throw new Error(data?.message || "Failed to add ingredients to shopping list");
       }
 
       showToast(
@@ -670,7 +683,7 @@ const SavedRecipes = () => {
       );
     } catch (err) {
       console.error(err);
-      showToast("Failed to add ingredients to shopping list", "error");
+      showToast(err?.message || "Failed to add ingredients to shopping list", "error");
     } finally {
       setAddingToListId(null);
     }
@@ -690,7 +703,13 @@ const SavedRecipes = () => {
 
   return (
     <>
-      <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <div
@@ -808,6 +827,36 @@ const SavedRecipes = () => {
             }}
           >
             <p style={{ fontSize: "18px" }}>Loading recipes...</p>
+          </div>
+        ) : error ? (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "60px 20px",
+              border: `1px dashed ${theme.border}`,
+              borderRadius: "12px",
+              backgroundColor: theme.toolbarBackground,
+            }}
+          >
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}>⚠️</div>
+            <p style={{ margin: "0 0 16px", fontSize: "20px", color: theme.text }}>
+              Failed to load recipes
+            </p>
+            <p style={{ margin: "0 0 20px", color: theme.textSecondary }}>{error}</p>
+            <button
+              onClick={() => fetchRecipes(pagination?.currentPage || 1)}
+              style={{
+                padding: "12px 24px",
+                backgroundColor: theme.buttonPrimary,
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              Retry
+            </button>
           </div>
         ) : recipes.length === 0 ? (
           <div

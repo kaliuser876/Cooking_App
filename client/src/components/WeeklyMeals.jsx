@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config";
 import { useTheme } from "../context/ThemeContext";
@@ -150,15 +150,7 @@ const EmptyDayCard = ({ day, theme }) => (
       textAlign: "center",
     }}
   >
-    <div
-      style={{
-        fontSize: "48px",
-        marginBottom: "16px",
-        opacity: 0.5,
-      }}
-    >
-      🍽️
-    </div>
+    <div style={{ fontSize: "48px", marginBottom: "16px", opacity: 0.5 }}>🍽️</div>
     <h3
       style={{
         margin: "0 0 8px 0",
@@ -385,67 +377,87 @@ const WeeklyMeals = () => {
   const [allRecipes, setAllRecipes] = useState([]);
   const [weeklyMeals, setWeeklyMeals] = useState({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [generating, setGenerating] = useState(false);
   const [rerollingDay, setRerollingDay] = useState(null);
   const [addingToListDay, setAddingToListDay] = useState(null);
   const [toast, setToast] = useState(null);
 
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-  };
+  const generateTimeoutRef = useRef(null);
+  const rerollTimeoutRef = useRef(null);
 
-  const loadWeeklyMeals = () => {
+  const showToast = useCallback((message, type = "success") => {
+    setToast({ message, type });
+  }, []);
+
+  const loadWeeklyMeals = useCallback(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        return JSON.parse(saved);
-      }
+      if (!saved) return {};
+
+      const parsed = JSON.parse(saved);
+      return parsed && typeof parsed === "object" ? parsed : {};
     } catch (err) {
       console.error("Failed to load weekly meals:", err);
+      return {};
     }
-    return {};
-  };
+  }, []);
 
-  const saveWeeklyMeals = (meals) => {
+  const saveWeeklyMeals = useCallback((meals) => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(meals));
     } catch (err) {
       console.error("Failed to save weekly meals:", err);
     }
-  };
+  }, []);
 
-  const fetchAllRecipes = async () => {
+  const fetchAllRecipes = useCallback(async () => {
     try {
       setLoading(true);
+      setError("");
+
       const res = await fetch(`${API_BASE_URL}/api/recipes?limit=1000`, {
         headers: {
           ...getAuthHeaders(),
         },
       });
-      if (!res.ok) throw new Error("Failed to fetch recipes");
-      const data = await res.json();
-      setAllRecipes(data.recipes || []);
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to fetch recipes");
+      }
+
+      setAllRecipes(Array.isArray(data?.recipes) ? data.recipes : []);
     } catch (err) {
       console.error("Failed to fetch recipes:", err);
-      showToast("Failed to load recipes", "error");
+      setAllRecipes([]);
+      setError(err?.message || "Failed to load recipes");
+      showToast(err?.message || "Failed to load recipes", "error");
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
 
   useEffect(() => {
     fetchAllRecipes();
     setWeeklyMeals(loadWeeklyMeals());
-  }, []);
+
+    return () => {
+      if (generateTimeoutRef.current) {
+        clearTimeout(generateTimeoutRef.current);
+      }
+      if (rerollTimeoutRef.current) {
+        clearTimeout(rerollTimeoutRef.current);
+      }
+    };
+  }, [fetchAllRecipes, loadWeeklyMeals]);
 
   const selectRandomRecipes = useCallback(
     (count, excludeIds = []) => {
       if (allRecipes.length === 0) return [];
 
-      const availableRecipes = allRecipes.filter(
-        (r) => !excludeIds.includes(r._id)
-      );
-
+      const availableRecipes = allRecipes.filter((r) => !excludeIds.includes(r._id));
       const selected = [];
       const usedIds = new Set(excludeIds);
       const shuffled = [...availableRecipes].sort(() => Math.random() - 0.5);
@@ -467,7 +479,7 @@ const WeeklyMeals = () => {
           usedIds.add(recipe._id);
         }
 
-        if (selected.length < count) {
+        if (selected.length < count && allRecipes.length > 0) {
           const allShuffled = [...allRecipes].sort(() => Math.random() - 0.5);
           let index = 0;
           while (selected.length < count) {
@@ -490,7 +502,11 @@ const WeeklyMeals = () => {
 
     setGenerating(true);
 
-    setTimeout(() => {
+    if (generateTimeoutRef.current) {
+      clearTimeout(generateTimeoutRef.current);
+    }
+
+    generateTimeoutRef.current = setTimeout(() => {
       const selectedRecipes = selectRandomRecipes(7);
       const newWeeklyMeals = {};
 
@@ -505,7 +521,7 @@ const WeeklyMeals = () => {
       setGenerating(false);
       showToast("Weekly meals generated!", "success");
     }, 500);
-  }, [allRecipes, selectRandomRecipes]);
+  }, [allRecipes, selectRandomRecipes, saveWeeklyMeals, showToast]);
 
   const handleReroll = useCallback(
     (day) => {
@@ -516,13 +532,16 @@ const WeeklyMeals = () => {
 
       setRerollingDay(day);
 
-      setTimeout(() => {
-        const currentIds = DAYS_OF_WEEK.filter((d) => d !== day && weeklyMeals[d])
-          .map((d) => weeklyMeals[d]._id);
+      if (rerollTimeoutRef.current) {
+        clearTimeout(rerollTimeoutRef.current);
+      }
 
-        let availableRecipes = allRecipes.filter(
-          (r) => !currentIds.includes(r._id)
+      rerollTimeoutRef.current = setTimeout(() => {
+        const currentIds = DAYS_OF_WEEK.filter((d) => d !== day && weeklyMeals[d]).map(
+          (d) => weeklyMeals[d]._id
         );
+
+        let availableRecipes = allRecipes.filter((r) => !currentIds.includes(r._id));
 
         if (weeklyMeals[day]) {
           availableRecipes = availableRecipes.filter(
@@ -554,12 +573,15 @@ const WeeklyMeals = () => {
         showToast(`${day}'s meal updated!`, "success");
       }, 300);
     },
-    [allRecipes, weeklyMeals]
+    [allRecipes, weeklyMeals, saveWeeklyMeals, showToast]
   );
 
-  const handleView = (recipeId) => {
-    navigate(`/recipes/${recipeId}`);
-  };
+  const handleView = useCallback(
+    (recipeId) => {
+      navigate(`/recipes/${recipeId}`);
+    },
+    [navigate]
+  );
 
   const handleAddToShoppingList = async (recipe, day) => {
     if (!recipe.ingredients || recipe.ingredients.length === 0) {
@@ -579,12 +601,16 @@ const WeeklyMeals = () => {
         body: JSON.stringify({ items: recipe.ingredients }),
       });
 
-      if (!res.ok) throw new Error("Failed to add to shopping list");
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to add to shopping list");
+      }
 
       showToast(`Added ${recipe.name} ingredients to shopping list!`, "success");
     } catch (err) {
       console.error(err);
-      showToast("Failed to add to shopping list", "error");
+      showToast(err?.message || "Failed to add to shopping list", "error");
     } finally {
       setAddingToListDay(null);
     }
@@ -600,9 +626,7 @@ const WeeklyMeals = () => {
       return;
     }
 
-    const allIngredients = mealsWithIngredients.flatMap(
-      (recipe) => recipe.ingredients
-    );
+    const allIngredients = mealsWithIngredients.flatMap((recipe) => recipe.ingredients);
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/shopping-list`, {
@@ -614,7 +638,11 @@ const WeeklyMeals = () => {
         body: JSON.stringify({ items: allIngredients }),
       });
 
-      if (!res.ok) throw new Error("Failed to add to shopping list");
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to add to shopping list");
+      }
 
       showToast(
         `Added ingredients from ${mealsWithIngredients.length} meals to shopping list!`,
@@ -622,7 +650,7 @@ const WeeklyMeals = () => {
       );
     } catch (err) {
       console.error(err);
-      showToast("Failed to add to shopping list", "error");
+      showToast(err?.message || "Failed to add to shopping list", "error");
     }
   };
 
@@ -706,7 +734,11 @@ const WeeklyMeals = () => {
             }}
           >
             <ShuffleIcon size={20} />
-            {generating ? "Generating..." : hasAnyMeals ? "Regenerate All" : "Generate Meals"}
+            {generating
+              ? "Generating..."
+              : hasAnyMeals
+              ? "Regenerate All"
+              : "Generate Meals"}
           </button>
 
           {hasAnyMeals && (
@@ -774,6 +806,36 @@ const WeeklyMeals = () => {
           >
             <p style={{ fontSize: "18px" }}>Loading recipes...</p>
           </div>
+        ) : error ? (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "60px 20px",
+              border: `1px dashed ${theme.border}`,
+              borderRadius: "12px",
+              backgroundColor: theme.toolbarBackground,
+            }}
+          >
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}>⚠️</div>
+            <p style={{ margin: "0 0 16px", fontSize: "20px", color: theme.text }}>
+              Failed to load recipes
+            </p>
+            <p style={{ margin: "0 0 20px", color: theme.textSecondary }}>{error}</p>
+            <button
+              onClick={fetchAllRecipes}
+              style={{
+                padding: "12px 24px",
+                backgroundColor: theme.buttonPrimary,
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              Retry
+            </button>
+          </div>
         ) : allRecipes.length === 0 ? (
           <div
             style={{
@@ -838,7 +900,7 @@ const WeeklyMeals = () => {
           </div>
         )}
 
-        {!loading && allRecipes.length > 0 && !hasAnyMeals && (
+        {!loading && !error && allRecipes.length > 0 && !hasAnyMeals && (
           <div
             style={{
               marginTop: "32px",
@@ -849,9 +911,7 @@ const WeeklyMeals = () => {
               textAlign: "center",
             }}
           >
-            <h3 style={{ margin: "0 0 12px", color: theme.text }}>
-              👆 Get Started
-            </h3>
+            <h3 style={{ margin: "0 0 12px", color: theme.text }}>👆 Get Started</h3>
             <p style={{ margin: 0, color: theme.textSecondary }}>
               Click the <strong>"Generate Meals"</strong> button above to randomly
               fill your week with delicious recipes!

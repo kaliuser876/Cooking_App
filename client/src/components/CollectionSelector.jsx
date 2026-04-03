@@ -1,6 +1,6 @@
 // components/CollectionSelector.jsx
 import React, { useState, useEffect } from "react";
-import { API_BASE_URL } from "../config";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 import { useTheme } from "../context/ThemeContext";
 import { getAuthHeaders } from "../context/AuthContext";
 

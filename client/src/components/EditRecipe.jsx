@@ -1,7 +1,7 @@
 // components/EditRecipe.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { API_BASE_URL } from "../config";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 import { getAuthHeaders } from "../context/AuthContext";
 
 const EditRecipe = () => {

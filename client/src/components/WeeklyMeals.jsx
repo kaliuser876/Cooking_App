@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { API_BASE_URL } from "../config";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 import { useTheme } from "../context/ThemeContext";
 import { getAuthHeaders } from "../context/AuthContext";
 

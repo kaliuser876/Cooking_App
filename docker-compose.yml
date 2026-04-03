@@ -1,39 +1,39 @@
 version: "3.9"
 
 services:
-  mongo:
+  db:
     image: mongo:6
-    container_name: mongo
-    restart: always
+    container_name: cooking_app_db
     ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
 
   server:
-    build: ./server
-    container_name: server
-    restart: always
+    build:
+      context: ./server
+    container_name: cooking_app_server
     ports:
       - "5000:5000"
-    env_file:
-      - ./server/.env
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGO_URI: mongodb://db:27017/cooking_app
     depends_on:
-      - mongo
-    # Required for Playwright to run browsers
-    shm_size: '1gb'
+      - db
 
   client:
     build:
       context: ./client
       args:
-        VITE_API_URL: /api
-    container_name: client
-    restart: always
+        VITE_API_URL: http://server:5000
+    container_name: cooking_app_client
     ports:
-      - "3000:3000"
+      - "3000:80"
     depends_on:
       - server
+    environment:
+      VITE_API_URL: http://server:5000
 
 volumes:
   mongo_data:

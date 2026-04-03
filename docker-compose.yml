@@ -10,7 +10,7 @@ services:
     volumes:
       - mongo_data:/data/db
 
-  backend:
+  server:
     build: ./server
     container_name: server
     restart: always
@@ -23,7 +23,7 @@ services:
     # Required for Playwright to run browsers
     shm_size: '1gb'
 
-  frontend:
+  client:
     build:
       context: ./client
       args:

@@ -1,0 +1,29 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Environment variables (NEVER COMMIT THESE)
+.env
+.env.*
+backend/.env
+frontend/.env
+
+# OS / misc
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Docker overrides / local configs
+docker-compose.override.yml
+
+# Build outputs
+dist/
+build/
+
+# Vite cache
+.vite/
+
+# Nginx temp
+*.pid

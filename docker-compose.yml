@@ -11,13 +11,13 @@ services:
       - mongo_data:/data/db
 
   backend:
-    build: ./backend
-    container_name: backend
+    build: ./server
+    container_name: server
     restart: always
     ports:
       - "5000:5000"
     env_file:
-      - ./backend/.env
+      - ./server/.env
     depends_on:
       - mongo
     # Required for Playwright to run browsers
@@ -25,15 +25,15 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./client
       args:
         VITE_API_URL: /api
-    container_name: frontend
+    container_name: client
     restart: always
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      - server
 
 volumes:
   mongo_data:

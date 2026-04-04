@@ -4,6 +4,7 @@ services:
   db:
     image: mongo:6
     container_name: cooking_app_db
+    restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
@@ -13,6 +14,7 @@ services:
     build:
       context: ./server
     container_name: cooking_app_server
+    restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 5000
@@ -20,7 +22,7 @@ services:
       VIRTUAL_HOST: www.snackthat.store
       VIRTUAL_PORT: 5000
       LETSENCRYPT_HOST: www.snackthat.store
-      LETSENCRYPT_EMAIL: your-email@example.com
+      LETSENCRYPT_EMAIL: jonathan.richardson.work@gmail.com
     depends_on:
       - db
 
@@ -30,6 +32,7 @@ services:
       args:
         VITE_API_URL: https://www.snackthat.store
     container_name: cooking_app_client
+    restart: unless-stopped
     environment:
       VITE_API_URL: https://www.snackthat.store
       VIRTUAL_HOST: www.snackthat.store
@@ -40,8 +43,9 @@ services:
       - server
 
   nginx-proxy:
-    image: jwilder/nginx-proxy
+    image: jwilder/nginx-proxy:latest
     container_name: nginx_proxy
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
@@ -50,13 +54,11 @@ services:
       - ./certs:/etc/nginx/certs:ro
       - ./vhost.d:/etc/nginx/vhost.d
       - ./html:/usr/share/nginx/html
-    depends_on:
-      - server
-      - client
 
   letsencrypt:
     image: jrcs/letsencrypt-nginx-proxy-companion
     container_name: letsencrypt_companion
+    restart: unless-stopped
     environment:
       NGINX_PROXY_CONTAINER: nginx_proxy
     volumes:

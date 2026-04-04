@@ -13,12 +13,12 @@ import collectionRoutes from "./routes/collections.js"; // NEW
 
 const app = express();
 const PORT = process.env.PORT || 8080;
-const MONGO_URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/recipes";
+const MONGO_URL = process.env.MONGO_URI || "mongodb://db:27017/recipes";
 
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: process.env.FRONTEND_URL || "https://www.snackthat.store/",
     credentials: true,
   })
 );

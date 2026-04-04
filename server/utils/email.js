@@ -3,6 +3,14 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendVerificationEmail = async (email, token) => {
+
+  if (!process.env.RESEND_API_KEY) {
+  console.warn("⚠️ RESEND_API_KEY missing — email disabled");
+}
+
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
   const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
   const { data, error } = await resend.emails.send({

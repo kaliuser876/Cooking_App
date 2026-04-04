@@ -21,7 +21,7 @@ services:
       RESEND_API_KEY: re_xxxxxxxxx
       NODE_ENV: production
       PORT: 5000
-      MONGO_URL: mongodb://db:27017/cooking_app
+      MONGO_URI: mongodb://db:27017/cooking_app
       # Nginx-proxy / Let's Encrypt settings
       VIRTUAL_HOST: api.snackthat.store
       VIRTUAL_PORT: 5000

@@ -18,7 +18,7 @@ const MONGO_URL = process.env.MONGO_URI || "mongodb://db:27017/recipes";
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "https://www.snackthat.store/",
+    origin: process.env.FRONTEND_URL || "https://www.snackthat.store",
     credentials: true,
   })
 );

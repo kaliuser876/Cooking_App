@@ -19,9 +19,9 @@ services:
       NODE_ENV: production
       PORT: 5000
       MONGO_URI: mongodb://db:27017/cooking_app
-      VIRTUAL_HOST: api.www.snackthat.store
+      VIRTUAL_HOST: www.api.snackthat.store
       VIRTUAL_PORT: 5000
-      LETSENCRYPT_HOST: api.www.snackthat.store
+      LETSENCRYPT_HOST: www.api.snackthat.store
       LETSENCRYPT_EMAIL: jonathan.richardson.work@gmail.com
     depends_on:
       - db

@@ -1,20 +1,11 @@
-/*  WeeklyMeals.jsx
-    A complete rewrite that works with the new WeeklyMenu backend model.
-*/
-import React, {
-  useEffect,
-  useState,
-  useCallback,
-  useRef,
-  Fragment,
-} from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-const API = import.meta.env.VITE_API_URL;
 import { useTheme } from "../context/ThemeContext";
 import { getAuthHeaders } from "../context/AuthContext";
 
-/* ---------- constants ---------- */
-const DAYS = [
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+const DAYS_OF_WEEK = [
   "Monday",
   "Tuesday",
   "Wednesday",
@@ -24,10 +15,18 @@ const DAYS = [
   "Sunday",
 ];
 
-/* ---------- icons (same tiny SVG helpers you had) ---------- */
-const Dice = ({ s = 18 }) => (
-  <svg width={s} height={s} viewBox="0 0 24 24">
-    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" fill="none" stroke="currentColor" strokeWidth="2" />
+const DiceIcon = ({ size = 20 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
     <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
     <circle cx="15.5" cy="8.5" r="1.5" fill="currentColor" />
     <circle cx="8.5" cy="15.5" r="1.5" fill="currentColor" />
@@ -35,8 +34,18 @@ const Dice = ({ s = 18 }) => (
     <circle cx="12" cy="12" r="1.5" fill="currentColor" />
   </svg>
 );
-const Shuffle = ({ s = 18 }) => (
-  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+
+const ShuffleIcon = ({ size = 20 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <polyline points="16 3 21 3 21 8" />
     <line x1="4" y1="20" x2="21" y2="3" />
     <polyline points="21 16 21 21 16 21" />
@@ -44,49 +53,82 @@ const Shuffle = ({ s = 18 }) => (
     <line x1="4" y1="4" x2="9" y2="9" />
   </svg>
 );
-const Cart = ({ s = 16 }) => (
-  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+
+const CartIcon = ({ size = 18 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <circle cx="9" cy="21" r="1" />
     <circle cx="20" cy="21" r="1" />
     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
   </svg>
 );
 
-/* ---------- simple Toast (same as before) ---------- */
-const Toast = ({ msg, type = "success", onClose }) => {
+const PrintIcon = ({ size = 18 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="6 9 6 2 18 2 18 9" />
+    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+    <rect x="6" y="14" width="12" height="8" />
+  </svg>
+);
+
+const Toast = ({ message, type, onClose }) => {
   useEffect(() => {
-    const t = setTimeout(onClose, 3000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(onClose, 3000);
+    return () => clearTimeout(timer);
   }, [onClose]);
-  const bg =
-    type === "error" ? "#f44336" : type === "info" ? "#2196f3" : "#4caf50";
+
+  const backgroundColor =
+    type === "success" ? "#4caf50" : type === "error" ? "#f44336" : "#2196f3";
+
   return (
     <div
       style={{
         position: "fixed",
-        bottom: 24,
-        right: 24,
-        background: bg,
-        color: "#fff",
-        padding: "14px 22px",
-        borderRadius: 12,
+        bottom: "24px",
+        right: "24px",
+        backgroundColor,
+        color: "white",
+        padding: "16px 24px",
+        borderRadius: "12px",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
         zIndex: 10000,
-        boxShadow: "0 4px 18px rgba(0,0,0,.3)",
         display: "flex",
         alignItems: "center",
-        gap: 12,
+        gap: "12px",
+        maxWidth: "90vw",
       }}
     >
-      <b>{msg}</b>
+      <span style={{ fontSize: "20px" }}>
+        {type === "success" ? "✓" : type === "error" ? "✕" : "ℹ"}
+      </span>
+      <span style={{ fontWeight: 500 }}>{message}</span>
       <button
         onClick={onClose}
         style={{
           background: "none",
           border: "none",
-          color: "inherit",
-          fontSize: 20,
+          color: "white",
           cursor: "pointer",
-          marginLeft: 8,
+          fontSize: "18px",
+          padding: "0 0 0 8px",
+          opacity: 0.8,
         }}
       >
         ×
@@ -95,642 +137,1387 @@ const Toast = ({ msg, type = "success", onClose }) => {
   );
 };
 
-/* ---------- helper to fetch JSON with auth ---------- */
-const jsonFetch = async (url, opts = {}) => {
-  const res = await fetch(url, {
-    ...opts,
-    headers: {
-      "Content-Type": "application/json",
-      ...getAuthHeaders(),
-      ...(opts.headers || {}),
-    },
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.message || "Request failed");
-  return data;
-};
+const MealPickerModal = ({
+  open,
+  day,
+  recipes,
+  onClose,
+  onSelect,
+  theme,
+}) => {
+  const [search, setSearch] = useState("");
 
-/* ************************************************************************** */
-/*                                COMPONENT                                   */
-/* ************************************************************************** */
-
-const WeeklyMeals = () => {
-  const { theme } = useTheme();
-  const navigate = useNavigate();
-
-  /* ---------------- state ---------------- */
-  const [menu, setMenu] = useState(null); // entire weeklyMenu doc
-  const [collections, setCollections] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState(null);
-  const [selectingDay, setSelectingDay] = useState(null); // day we're manually choosing
-  const [allUserRecipes, setAllUserRecipes] = useState([]);
-  const [pickerSearch, setPickerSearch] = useState("");
-
-  /* ---------------- helpers ---------------- */
-  const show = (msg, type = "success") => setToast({ msg, type });
-
-  const reloadAll = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [m, c] = await Promise.all([
-        jsonFetch(`${API}/api/weekly-menu`),
-        jsonFetch(`${API}/api/collections`),
-      ]);
-      setMenu(m);
-      setCollections(c);
-    } catch (err) {
-      console.error(err);
-      show(err.message || "Failed to load", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  /* ---------------- first load ---------------- */
   useEffect(() => {
-    reloadAll();
-  }, [reloadAll]);
+    if (!open) setSearch("");
+  }, [open]);
 
-  /* ---------------- generate ---------------- */
-  const handleGenerate = async () => {
-    if (!menu) return;
-    try {
-      setSaving(true);
-      const data = await jsonFetch(`${API}/api/weekly-menu/generate`, {
-        method: "POST",
-        body: JSON.stringify({
-          selectedCollections: menu.selectedCollections.map((c) => c._id),
-        }),
-      });
-      setMenu(data);
-      show("Weekly meals generated!");
-    } catch (e) {
-      show(e.message, "error");
-    } finally {
-      setSaving(false);
-    }
-  };
+  if (!open) return null;
 
-  /* ---------------- disable / enable day ---------------- */
-  const toggleDay = async (day) => {
-    if (!menu) return;
-    const current = menu.days[day] || {};
-    try {
-      const data = await jsonFetch(
-        `${API}/api/weekly-menu/day/${day}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({
-            disabled: !current.disabled,
-          }),
-        }
-      );
-      setMenu(data);
-    } catch (e) {
-      show(e.message, "error");
-    }
-  };
+  const filtered = recipes.filter((recipe) =>
+    recipe.name.toLowerCase().includes(search.toLowerCase())
+  );
 
-  /* ---------------- open manual picker ---------------- */
-  const openPicker = async (day) => {
-    setPickerSearch("");
-    setSelectingDay(day);
-    // lazy load all recipes once
-    if (allUserRecipes.length === 0) {
-      try {
-        const r = await jsonFetch(`${API}/api/recipes?limit=1000`);
-        setAllUserRecipes(r.recipes || []);
-      } catch (e) {
-        show(e.message, "error");
-      }
-    }
-  };
-
-  /* ---------------- save chosen recipe ---------------- */
-  const chooseRecipeForDay = async (day, recipe) => {
-    try {
-      const data = await jsonFetch(
-        `${API}/api/weekly-menu/day/${day}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({
-            recipe: recipe._id,
-            disabled: false,
-            manuallySelected: true,
-          }),
-        }
-      );
-      setMenu(data);
-      show(`Set ${day} to ${recipe.name}`);
-    } catch (e) {
-      show(e.message, "error");
-    } finally {
-      setSelectingDay(null);
-    }
-  };
-
-  /* ---------------- collection filter change ---------------- */
-  const handleCollectionFilter = async (e) => {
-    const selectedIds = Array.from(e.target.selectedOptions).map((o) => o.value);
-    try {
-      setSaving(true);
-      const data = await jsonFetch(`${API}/api/weekly-menu`, {
-        method: "PUT",
-        body: JSON.stringify({
-          ...menu,
-          selectedCollections: selectedIds,
-        }),
-      });
-      setMenu(data);
-    } catch (err) {
-      show(err.message, "error");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  /* ---------------- print ---------------- */
-  const handlePrint = () => window.print();
-
-  /* ---------------- utility ---------------- */
-  const recipeFor = (day) => menu?.days?.[day]?.recipe;
-
-  const disabled = (day) => menu?.days?.[day]?.disabled;
-
-  const dayCard = (day) => {
-    const rec = recipeFor(day);
-    if (disabled(day))
-      return (
-        <div
-          key={day}
-          style={{
-            background: theme.cardBackground,
-            borderRadius: 16,
-            padding: 24,
-            minHeight: 240,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            textAlign: "center",
-            border: `2px solid ${theme.error || "#f44336"}`,
-            color: theme.error || "#f44336",
-            position: "relative",
-          }}
-        >
-          <span style={{ fontSize: 48 }}>❌</span>
-          <b style={{ marginTop: 8 }}>{day}</b>
-          <button
-            onClick={() => toggleDay(day)}
-            style={{
-              marginTop: 16,
-              padding: "8px 14px",
-              border: "none",
-              borderRadius: 8,
-              background: theme.buttonSuccess,
-              color: "#fff",
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
-          >
-            Reactivate
-          </button>
-        </div>
-      );
-
-    if (!rec)
-      return (
-        <div
-          key={day}
-          style={{
-            background: theme.cardBackground,
-            border: `2px dashed ${theme.border}`,
-            borderRadius: 16,
-            padding: 24,
-            minHeight: 240,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            textAlign: "center",
-            color: theme.textMuted,
-          }}
-        >
-          <span style={{ fontSize: 40, marginBottom: 8 }}>🍽️</span>
-          <b>{day}</b>
-          <small style={{ marginTop: 4 }}>No meal yet</small>
-          <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-            <button
-              onClick={() => handleGenerate()}
-              style={{
-                border: "none",
-                background: theme.buttonPrimary,
-                color: "#fff",
-                padding: "8px 14px",
-                borderRadius: 8,
-                cursor: "pointer",
-              }}
-            >
-              Fill
-            </button>
-            <button
-              onClick={() => openPicker(day)}
-              style={{
-                border: "none",
-                background: theme.buttonNeutral,
-                color: "#fff",
-                padding: "8px 14px",
-                borderRadius: 8,
-                cursor: "pointer",
-              }}
-            >
-              Select
-            </button>
-            <button
-              onClick={() => toggleDay(day)}
-              style={{
-                border: "none",
-                background: theme.error || "#f44336",
-                color: "#fff",
-                padding: "8px 14px",
-                borderRadius: 8,
-                cursor: "pointer",
-              }}
-            >
-              Disable
-            </button>
-          </div>
-        </div>
-      );
-
-    return (
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.5)",
+        zIndex: 10000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "16px",
+      }}
+    >
       <div
-        key={day}
+        onClick={(e) => e.stopPropagation()}
         style={{
-          background: theme.cardBackground,
-          borderRadius: 16,
+          width: "100%",
+          maxWidth: "720px",
+          maxHeight: "85vh",
           overflow: "hidden",
-          boxShadow: `0 4px 12px ${theme.shadow}`,
+          background: theme.cardBackground,
+          borderRadius: "16px",
+          boxShadow: `0 12px 40px ${theme.shadow}`,
           display: "flex",
           flexDirection: "column",
         }}
       >
-        {/* header */}
         <div
           style={{
-            background: theme.buttonPrimary,
-            color: "#fff",
-            padding: "10px 14px",
+            padding: "16px 20px",
+            borderBottom: `1px solid ${theme.border}`,
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            fontWeight: 600,
+            gap: "12px",
           }}
         >
-          <span>{day}</span>
-          <div style={{ display: "flex", gap: 6 }}>
-            <button
-              onClick={() => openPicker(day)}
-              title="Choose another recipe"
-              style={{
-                border: "none",
-                background: "rgba(255,255,255,.25)",
-                color: "#fff",
-                padding: "4px 6px",
-                borderRadius: 6,
-                cursor: "pointer",
-              }}
-            >
-              Pick
-            </button>
-            <button
-              onClick={() => toggleDay(day)}
-              title="Disable day"
-              style={{
-                border: "none",
-                background: "rgba(255,255,255,.25)",
-                color: "#fff",
-                padding: "4px 6px",
-                borderRadius: 6,
-                cursor: "pointer",
-              }}
-            >
-              ✕
-            </button>
+          <div>
+            <h3 style={{ margin: 0, color: theme.text }}>Select Meal for {day}</h3>
+            <p style={{ margin: "6px 0 0", color: theme.textSecondary, fontSize: "14px" }}>
+              Choose from your available recipes
+            </p>
           </div>
+          <button
+            onClick={onClose}
+            style={{
+              border: "none",
+              background: "transparent",
+              fontSize: "24px",
+              cursor: "pointer",
+              color: theme.text,
+            }}
+          >
+            ×
+          </button>
         </div>
 
-        {/* image */}
-        <div
-          style={{
-            width: "100%",
-            paddingTop: "56%",
-            position: "relative",
-            background: theme.borderLight,
-          }}
-          onClick={() => navigate(`/recipes/${rec._id}`)}
-        >
-          <img
-            src={
-              rec.image ||
-              "https://via.placeholder.com/600x338?text=No+Image+Available"
-            }
-            alt={rec.name}
+        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${theme.border}` }}>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search recipes..."
             style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
               width: "100%",
-              height: "100%",
-              objectFit: "cover",
+              padding: "12px 14px",
+              borderRadius: "10px",
+              border: `1px solid ${theme.border}`,
+              background: theme.inputBackground || theme.cardBackground,
+              color: theme.text,
+              fontSize: "14px",
+              outline: "none",
+              boxSizing: "border-box",
             }}
           />
         </div>
 
-        {/* footer */}
-        <div style={{ padding: 16, flex: 1, display: "flex", flexDirection: "column" }}>
-          <h3
-            style={{
-              margin: "0 0 8px",
-              fontSize: 16,
-              lineHeight: 1.3,
-              cursor: "pointer",
-            }}
-            onClick={() => navigate(`/recipes/${rec._id}`)}
-          >
-            {rec.name}
-          </h3>
-          <small style={{ color: theme.textMuted }}>
-            {rec.ingredients?.length || 0} ingredients
-          </small>
+        <div
+          style={{
+            overflowY: "auto",
+            padding: "12px",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "12px",
+          }}
+        >
+          {filtered.length === 0 ? (
+            <div
+              style={{
+                gridColumn: "1 / -1",
+                padding: "32px",
+                textAlign: "center",
+                color: theme.textSecondary,
+              }}
+            >
+              No matching recipes found
+            </div>
+          ) : (
+            filtered.map((recipe) => (
+              <button
+                key={recipe._id}
+                onClick={() => onSelect(recipe)}
+                style={{
+                  border: `1px solid ${theme.border}`,
+                  background: theme.toolbarBackground,
+                  borderRadius: "12px",
+                  overflow: "hidden",
+                  cursor: "pointer",
+                  padding: 0,
+                  textAlign: "left",
+                }}
+              >
+                <div
+                  style={{
+                    height: "120px",
+                    background: theme.borderLight,
+                  }}
+                >
+                  <img
+                    src={
+                      recipe.image ||
+                      "https://via.placeholder.com/400x225?text=No+Image"
+                    }
+                    alt={recipe.name}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                </div>
+                <div style={{ padding: "12px" }}>
+                  <div
+                    style={{
+                      color: theme.text,
+                      fontWeight: 600,
+                      fontSize: "14px",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    {recipe.name}
+                  </div>
+                  <div style={{ color: theme.textSecondary, fontSize: "12px" }}>
+                    {recipe.ingredients?.length || 0} ingredients
+                  </div>
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const EmptyDayCard = ({ day, theme, onSelectMeal }) => (
+  <div
+    style={{
+      backgroundColor: theme.cardBackground,
+      borderRadius: "16px",
+      border: `2px dashed ${theme.border}`,
+      padding: "24px",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: "280px",
+      textAlign: "center",
+    }}
+  >
+    <div style={{ fontSize: "48px", marginBottom: "16px", opacity: 0.5 }}>🍽️</div>
+    <h3
+      style={{
+        margin: "0 0 8px 0",
+        color: theme.text,
+        fontSize: "18px",
+        fontWeight: 600,
+      }}
+    >
+      {day}
+    </h3>
+    <p style={{ margin: "0 0 18px", color: theme.textMuted, fontSize: "14px" }}>
+      No meal planned
+    </p>
+    <button
+      onClick={onSelectMeal}
+      style={{
+        padding: "10px 14px",
+        backgroundColor: theme.buttonPrimary,
+        color: "white",
+        border: "none",
+        borderRadius: "8px",
+        cursor: "pointer",
+        fontWeight: 600,
+      }}
+    >
+      Select Meal
+    </button>
+  </div>
+);
+
+const DisabledDayCard = ({ day, theme, onReactivate }) => (
+  <div
+    style={{
+      backgroundColor: theme.cardBackground,
+      borderRadius: "16px",
+      border: `2px dashed #d32f2f`,
+      padding: "24px",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: "280px",
+      textAlign: "center",
+    }}
+  >
+    <div
+      style={{
+        fontSize: "88px",
+        lineHeight: 1,
+        color: "#d32f2f",
+        fontWeight: 900,
+        marginBottom: "16px",
+      }}
+    >
+      ✕
+    </div>
+    <h3
+      style={{
+        margin: "0 0 8px 0",
+        color: theme.text,
+        fontSize: "18px",
+        fontWeight: 600,
+      }}
+    >
+      {day}
+    </h3>
+    <p style={{ margin: "0 0 18px", color: theme.textMuted, fontSize: "14px" }}>
+      Removed from rotation
+    </p>
+    <button
+      onClick={onReactivate}
+      style={{
+        padding: "10px 14px",
+        backgroundColor: theme.buttonSuccess,
+        color: "white",
+        border: "none",
+        borderRadius: "8px",
+        cursor: "pointer",
+        fontWeight: 600,
+      }}
+    >
+      Reactivate Day
+    </button>
+  </div>
+);
+
+const MealDayCard = ({
+  day,
+  entry,
+  onReroll,
+  onView,
+  onAddToShoppingList,
+  onDeleteDay,
+  onSelectMeal,
+  isRerolling,
+  isAddingToList,
+  theme,
+}) => {
+  const recipe = entry?.recipe;
+  const [imageError, setImageError] = useState(false);
+
+  return (
+    <div
+      style={{
+        backgroundColor: theme.cardBackground,
+        borderRadius: "16px",
+        overflow: "hidden",
+        boxShadow: `0 4px 12px ${theme.shadow}`,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: theme.buttonPrimary,
+          color: "white",
+          padding: "12px 16px",
+          fontWeight: 600,
+          fontSize: "14px",
+          textTransform: "uppercase",
+          letterSpacing: "1px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "8px",
+          flexWrap: "wrap",
+        }}
+      >
+        <span>{day}</span>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          {entry?.manuallySelected && (
+            <span
+              style={{
+                background: "rgba(255,255,255,0.2)",
+                borderRadius: "6px",
+                padding: "6px 8px",
+                fontSize: "11px",
+              }}
+            >
+              MANUAL
+            </span>
+          )}
           <button
-            onClick={() => navigate(`/recipes/${rec._id}`)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onReroll();
+            }}
+            disabled={isRerolling}
             style={{
-              marginTop: "auto",
+              background: "rgba(255,255,255,0.2)",
               border: "none",
-              background: theme.buttonPrimary,
-              color: "#fff",
+              borderRadius: "6px",
+              padding: "6px 10px",
+              cursor: isRerolling ? "not-allowed" : "pointer",
+              color: "white",
+              fontSize: "12px",
+              fontWeight: 500,
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            <DiceIcon size={14} />
+            {isRerolling ? "..." : "Reroll"}
+          </button>
+        </div>
+      </div>
+
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          paddingTop: "56%",
+          backgroundColor: theme.borderLight,
+          cursor: "pointer",
+        }}
+        onClick={() => recipe?._id && onView(recipe._id)}
+      >
+        <img
+          src={
+            imageError || !recipe?.image
+              ? "https://via.placeholder.com/400x225?text=No+Image"
+              : recipe.image
+          }
+          alt={recipe?.name || day}
+          onError={() => setImageError(true)}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+          }}
+        />
+      </div>
+
+      <div
+        style={{
+          padding: "16px",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <h3
+          style={{
+            margin: "0 0 8px 0",
+            fontSize: "16px",
+            fontWeight: 600,
+            color: theme.text,
+            lineHeight: 1.3,
+            cursor: "pointer",
+          }}
+          onClick={() => recipe?._id && onView(recipe._id)}
+        >
+          {recipe?.name || "No recipe selected"}
+        </h3>
+
+        <div
+          style={{
+            fontSize: "13px",
+            color: theme.textMuted,
+            marginBottom: "12px",
+            marginTop: "auto",
+          }}
+        >
+          {recipe?.ingredients?.length || 0} ingredients
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gap: "8px",
+          }}
+        >
+          <button
+            onClick={() => recipe?._id && onView(recipe._id)}
+            style={{
               padding: "10px",
-              borderRadius: 8,
+              backgroundColor: theme.buttonPrimary,
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
               cursor: "pointer",
-              fontWeight: 600,
+              fontWeight: 500,
+              fontSize: "13px",
             }}
           >
             View
           </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddToShoppingList(recipe);
+            }}
+            disabled={isAddingToList}
+            style={{
+              padding: "10px",
+              backgroundColor: theme.buttonSuccess,
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: isAddingToList ? "not-allowed" : "pointer",
+              fontWeight: 500,
+              fontSize: "13px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              opacity: isAddingToList ? 0.7 : 1,
+            }}
+          >
+            <CartIcon size={14} />
+            {isAddingToList ? "..." : "Add"}
+          </button>
+
+          <button
+            onClick={onSelectMeal}
+            style={{
+              padding: "10px",
+              backgroundColor: "#ff9800",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontWeight: 500,
+              fontSize: "13px",
+            }}
+          >
+            Select Meal
+          </button>
+
+          <button
+            onClick={onDeleteDay}
+            style={{
+              padding: "10px",
+              backgroundColor: "#d32f2f",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontWeight: 500,
+              fontSize: "13px",
+            }}
+          >
+            Delete Day
+          </button>
         </div>
       </div>
-    );
+    </div>
+  );
+};
+
+const WeeklyMeals = () => {
+  const navigate = useNavigate();
+  const { theme } = useTheme();
+
+  const [allRecipes, setAllRecipes] = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [weeklyMenu, setWeeklyMenu] = useState(null);
+  const [selectedCollections, setSelectedCollections] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [collectionsLoading, setCollectionsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [rerollingDay, setRerollingDay] = useState(null);
+  const [addingToListDay, setAddingToListDay] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [pickerDay, setPickerDay] = useState(null);
+
+  const showToast = useCallback((message, type = "success") => {
+    setToast({ message, type });
+  }, []);
+
+  const fetchAllRecipes = useCallback(async () => {
+    const res = await fetch(`${API_BASE_URL}/api/recipes?limit=1000`, {
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      throw new Error(data?.message || "Failed to fetch recipes");
+    }
+
+    return Array.isArray(data?.recipes) ? data.recipes : [];
+  }, []);
+
+  const fetchCollections = useCallback(async () => {
+    const res = await fetch(`${API_BASE_URL}/api/collections`, {
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      throw new Error(data?.message || "Failed to fetch collections");
+    }
+
+    return Array.isArray(data) ? data : [];
+  }, []);
+
+  const fetchWeeklyMenu = useCallback(async () => {
+    const res = await fetch(`${API_BASE_URL}/api/weekly-menu`, {
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      throw new Error(data?.message || "Failed to fetch weekly menu");
+    }
+
+    return data;
+  }, []);
+
+  const loadPageData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setCollectionsLoading(true);
+      setError("");
+
+      const [recipes, collectionsData, menu] = await Promise.all([
+        fetchAllRecipes(),
+        fetchCollections(),
+        fetchWeeklyMenu(),
+      ]);
+
+      setAllRecipes(recipes);
+      setCollections(collectionsData);
+      setWeeklyMenu(menu);
+      setSelectedCollections(
+        Array.isArray(menu?.selectedCollections)
+          ? menu.selectedCollections.map((c) => (typeof c === "string" ? c : c._id))
+          : []
+      );
+    } catch (err) {
+      console.error(err);
+      setError(err?.message || "Failed to load weekly meals");
+      showToast(err?.message || "Failed to load weekly meals", "error");
+    } finally {
+      setLoading(false);
+      setCollectionsLoading(false);
+    }
+  }, [fetchAllRecipes, fetchCollections, fetchWeeklyMenu, showToast]);
+
+  useEffect(() => {
+    loadPageData();
+  }, [loadPageData]);
+
+  const getDayEntry = useCallback(
+    (day) => weeklyMenu?.days?.[day] || { recipe: null, disabled: false, manuallySelected: false },
+    [weeklyMenu]
+  );
+
+  const filteredRecipes = selectedCollections.length
+    ? allRecipes.filter((recipe) =>
+        Array.isArray(recipe.collections) &&
+        recipe.collections.some((id) =>
+          selectedCollections.includes(typeof id === "string" ? id : id._id)
+        )
+      )
+    : allRecipes;
+
+  const saveDay = useCallback(
+    async (day, payload, successMessage) => {
+      const res = await fetch(`${API_BASE_URL}/api/weekly-menu/day/${day}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.message || `Failed to update ${day}`);
+      }
+
+      setWeeklyMenu(data);
+      setSelectedCollections(
+        Array.isArray(data?.selectedCollections)
+          ? data.selectedCollections.map((c) => (typeof c === "string" ? c : c._id))
+          : []
+      );
+
+      if (successMessage) showToast(successMessage, "success");
+    },
+    [showToast]
+  );
+
+  const handleGenerate = useCallback(async () => {
+    if (allRecipes.length === 0) {
+      showToast("No recipes available. Add some recipes first!", "error");
+      return;
+    }
+
+    setGenerating(true);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/weekly-menu/generate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ selectedCollections }),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to generate weekly menu");
+      }
+
+      setWeeklyMenu(data);
+      setSelectedCollections(
+        Array.isArray(data?.selectedCollections)
+          ? data.selectedCollections.map((c) => (typeof c === "string" ? c : c._id))
+          : []
+      );
+
+      showToast("Weekly meals generated!", "success");
+    } catch (err) {
+      console.error(err);
+      showToast(err?.message || "Failed to generate weekly menu", "error");
+    } finally {
+      setGenerating(false);
+    }
+  }, [allRecipes.length, selectedCollections, showToast]);
+
+  const handleReroll = useCallback(
+    async (day) => {
+      const currentEntry = getDayEntry(day);
+
+      if (filteredRecipes.length === 0) {
+        showToast("No recipes available for this filter", "error");
+        return;
+      }
+
+      setRerollingDay(day);
+
+      try {
+        const usedIds = DAYS_OF_WEEK.filter((d) => d !== day)
+          .map((d) => getDayEntry(d)?.recipe?._id)
+          .filter(Boolean);
+
+        let available = filteredRecipes.filter(
+          (recipe) =>
+            !usedIds.includes(recipe._id) &&
+            recipe._id !== currentEntry?.recipe?._id
+        );
+
+        if (available.length === 0) {
+          available = filteredRecipes.filter(
+            (recipe) => recipe._id !== currentEntry?.recipe?._id
+          );
+        }
+
+        if (available.length === 0) {
+          available = filteredRecipes;
+        }
+
+        const randomRecipe =
+          available[Math.floor(Math.random() * available.length)];
+
+        await saveDay(
+          day,
+          {
+            recipe: randomRecipe._id,
+            disabled: false,
+            manuallySelected: false,
+          },
+          `${day}'s meal updated!`
+        );
+      } catch (err) {
+        console.error(err);
+        showToast(err?.message || "Failed to reroll meal", "error");
+      } finally {
+        setRerollingDay(null);
+      }
+    },
+    [filteredRecipes, getDayEntry, saveDay, showToast]
+  );
+
+  const handleView = useCallback(
+    (recipeId) => {
+      navigate(`/recipes/${recipeId}`);
+    },
+    [navigate]
+  );
+
+  const handleAddToShoppingList = async (recipe, day) => {
+    if (!recipe?.ingredients || recipe.ingredients.length === 0) {
+      showToast("This recipe has no ingredients", "error");
+      return;
+    }
+
+    setAddingToListDay(day);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/shopping-list`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ items: recipe.ingredients }),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to add to shopping list");
+      }
+
+      showToast(`Added ${recipe.name} ingredients to shopping list!`, "success");
+    } catch (err) {
+      console.error(err);
+      showToast(err?.message || "Failed to add to shopping list", "error");
+    } finally {
+      setAddingToListDay(null);
+    }
   };
 
-  /* ---------------- component JSX ---------------- */
-  if (loading)
-    return (
-      <div style={{ padding: 40, textAlign: "center", color: theme.text }}>
-        Loading...
-      </div>
-    );
+  const handleAddAllToShoppingList = async () => {
+    const mealsWithIngredients = DAYS_OF_WEEK.map((day) => getDayEntry(day))
+      .filter((entry) => entry?.recipe?.ingredients?.length > 0)
+      .map((entry) => entry.recipe);
 
-  /* ----------- body ----------- */
+    if (mealsWithIngredients.length === 0) {
+      showToast("No meals with ingredients to add", "error");
+      return;
+    }
+
+    const allIngredients = mealsWithIngredients.flatMap((recipe) => recipe.ingredients);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/shopping-list`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ items: allIngredients }),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to add to shopping list");
+      }
+
+      showToast(
+        `Added ingredients from ${mealsWithIngredients.length} meals to shopping list!`,
+        "success"
+      );
+    } catch (err) {
+      console.error(err);
+      showToast(err?.message || "Failed to add to shopping list", "error");
+    }
+  };
+
+  const handleDeleteDay = async (day) => {
+    try {
+      await saveDay(
+        day,
+        { recipe: null, disabled: true, manuallySelected: false },
+        `${day} removed from rotation`
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleReactivateDay = async (day) => {
+    try {
+      await saveDay(
+        day,
+        { recipe: null, disabled: false, manuallySelected: false },
+        `${day} reactivated`
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSelectMeal = async (recipe) => {
+    if (!pickerDay || !recipe?._id) return;
+
+    try {
+      await saveDay(
+        pickerDay,
+        {
+          recipe: recipe._id,
+          disabled: false,
+          manuallySelected: true,
+        },
+        `${pickerDay}'s meal selected`
+      );
+      setPickerDay(null);
+    } catch (err) {
+      console.error(err);
+      showToast(err?.message || "Failed to select meal", "error");
+    }
+  };
+
+  const handleClear = async () => {
+    if (!window.confirm("Clear all weekly meals?")) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/weekly-menu/clear`, {
+        method: "POST",
+        headers: {
+          ...getAuthHeaders(),
+        },
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to clear weekly menu");
+      }
+
+      setWeeklyMenu(data);
+      setSelectedCollections([]);
+      showToast("Weekly meals cleared", "success");
+    } catch (err) {
+      console.error(err);
+      showToast(err?.message || "Failed to clear weekly menu", "error");
+    }
+  };
+
+  const handleCollectionChange = async (collectionId) => {
+    const updated = selectedCollections.includes(collectionId)
+      ? selectedCollections.filter((id) => id !== collectionId)
+      : [...selectedCollections, collectionId];
+
+    setSelectedCollections(updated);
+
+    try {
+      const currentDays = {};
+      DAYS_OF_WEEK.forEach((day) => {
+        const entry = getDayEntry(day);
+        currentDays[day] = {
+          recipe: entry?.recipe?._id || null,
+          disabled: Boolean(entry?.disabled),
+          manuallySelected: Boolean(entry?.manuallySelected),
+        };
+      });
+
+      const res = await fetch(`${API_BASE_URL}/api/weekly-menu`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({
+          selectedCollections: updated,
+          days: currentDays,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to update collection filters");
+      }
+
+      setWeeklyMenu(data);
+    } catch (err) {
+      console.error(err);
+      showToast(err?.message || "Failed to update collection filters", "error");
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const activeDays = DAYS_OF_WEEK.filter((day) => {
+    const entry = getDayEntry(day);
+    return !entry?.disabled && entry?.recipe;
+  });
+
+  const hasAnyMeals = activeDays.length > 0;
+
   return (
     <>
+      <style>
+        {`
+          @media print {
+            body * {
+              visibility: hidden;
+            }
+            .print-menu, .print-menu * {
+              visibility: visible;
+            }
+            .print-menu {
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
+              padding: 24px;
+              background: white;
+              color: black;
+            }
+            .no-print {
+              display: none !important;
+            }
+          }
+        `}
+      </style>
+
       {toast && (
-        <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
 
-      {/* header / controls */}
-      <div
-        style={{
-          maxWidth: 1200,
-          margin: "0 auto",
-          padding: "0 16px",
-        }}
-      >
-        <h2 style={{ marginTop: 24, marginBottom: 8, color: theme.text }}>
-          📅 Weekly Meals
-        </h2>
+      <MealPickerModal
+        open={Boolean(pickerDay)}
+        day={pickerDay}
+        recipes={filteredRecipes}
+        onClose={() => setPickerDay(null)}
+        onSelect={handleSelectMeal}
+        theme={theme}
+      />
+
+      <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+        <div
+          className="no-print"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: "24px",
+            flexWrap: "wrap",
+            gap: "16px",
+          }}
+        >
+          <div>
+            <h2 style={{ margin: "0 0 8px", fontSize: "2rem", color: theme.text }}>
+              📅 Weekly Meals
+            </h2>
+            <p style={{ margin: 0, color: theme.textSecondary }}>
+              Plan your meals for the week
+              {hasAnyMeals && ` • ${activeDays.length}/7 active days planned`}
+            </p>
+          </div>
+        </div>
 
         <div
+          className="no-print"
           style={{
-            background: theme.toolbarBackground,
-            border: `1px solid ${theme.border}`,
-            borderRadius: 12,
-            padding: 16,
             display: "flex",
             flexWrap: "wrap",
-            gap: 12,
+            gap: "12px",
+            marginBottom: "24px",
+            padding: "16px",
+            backgroundColor: theme.toolbarBackground,
+            borderRadius: "12px",
+            border: `1px solid ${theme.border}`,
+            alignItems: "center",
           }}
         >
           <button
             onClick={handleGenerate}
-            disabled={saving}
+            disabled={loading || generating || allRecipes.length === 0}
             style={{
-              padding: "10px 22px",
-              background: theme.buttonPrimary,
-              color: "#fff",
+              padding: "12px 24px",
+              backgroundColor:
+                loading || allRecipes.length === 0
+                  ? theme.borderLight
+                  : theme.buttonPrimary,
+              color:
+                loading || allRecipes.length === 0 ? theme.textMuted : "white",
               border: "none",
-              borderRadius: 8,
-              cursor: saving ? "not-allowed" : "pointer",
+              borderRadius: "8px",
+              cursor:
+                loading || generating || allRecipes.length === 0
+                  ? "not-allowed"
+                  : "pointer",
+              fontWeight: 600,
+              fontSize: "15px",
               display: "flex",
               alignItems: "center",
-              gap: 6,
-              fontWeight: 600,
+              gap: "8px",
             }}
           >
-            <Shuffle s={18} />
-            {saving ? "Working..." : "Generate"}
+            <ShuffleIcon size={20} />
+            {generating ? "Generating..." : hasAnyMeals ? "Regenerate All" : "Generate Meals"}
           </button>
 
-          {/* print */}
           <button
             onClick={handlePrint}
             style={{
-              padding: "10px 22px",
-              background: theme.buttonNeutral,
-              color: "#fff",
+              padding: "12px 20px",
+              backgroundColor: theme.buttonNeutral,
+              color: "white",
               border: "none",
-              borderRadius: 8,
+              borderRadius: "8px",
               cursor: "pointer",
               fontWeight: 600,
+              fontSize: "15px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
             }}
           >
-            Print
+            <PrintIcon size={18} />
+            Print Menu
           </button>
 
-          {/* collection filter */}
-          <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontSize: 13, color: theme.textSecondary }}>
-              Filter by collection
-            </span>
-            <select
-              multiple
-              value={menu.selectedCollections.map((c) => c._id)}
-              onChange={handleCollectionFilter}
-              style={{
-                minWidth: 200,
-                padding: 6,
-                borderRadius: 6,
-                border: `1px solid ${theme.border}`,
-                background: theme.cardBackground,
-                color: theme.text,
-              }}
-            >
-              {collections.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.icon} {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+          {hasAnyMeals && (
+            <>
+              <button
+                onClick={handleAddAllToShoppingList}
+                style={{
+                  padding: "12px 24px",
+                  backgroundColor: theme.buttonSuccess,
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  fontSize: "15px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <CartIcon size={18} />
+                Add All to List
+              </button>
 
-        {/* grid of day cards */}
-        <div
-          style={{
-            marginTop: 24,
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
-            gap: 20,
-          }}
-        >
-          {DAYS.map(dayCard)}
-        </div>
-      </div>
+              <button
+                onClick={handleClear}
+                style={{
+                  padding: "12px 24px",
+                  backgroundColor: "#d32f2f",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: 500,
+                  fontSize: "15px",
+                }}
+              >
+                Clear All
+              </button>
+            </>
+          )}
 
-      {/* -------------- manual picker modal -------------- */}
-      {selectingDay && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,.55)",
-            zIndex: 9999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 16,
-          }}
-          onClick={() => setSelectingDay(null)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: 600,
-              width: "100%",
-              maxHeight: "90vh",
-              overflow: "auto",
-              background: theme.cardBackground,
-              borderRadius: 12,
-              padding: 24,
-            }}
-          >
-            <h3 style={{ marginTop: 0 }}>Select recipe for {selectingDay}</h3>
-
-            <input
-              value={pickerSearch}
-              onChange={(e) => setPickerSearch(e.target.value)}
-              placeholder="Search recipes..."
-              style={{
-                width: "100%",
-                padding: 10,
-                marginBottom: 12,
-                borderRadius: 8,
-                border: `1px solid ${theme.border}`,
-                background: theme.toolbarBackground,
-                color: theme.text,
-              }}
-            />
-
+          <div style={{ width: "100%", marginTop: "8px" }}>
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))",
-                gap: 12,
+                marginBottom: "10px",
+                color: theme.text,
+                fontWeight: 600,
+                fontSize: "14px",
               }}
             >
-              {allUserRecipes
-                .filter((r) =>
-                  r.name.toLowerCase().includes(pickerSearch.toLowerCase())
-                )
-                .map((r) => (
-                  <div
-                    key={r._id}
-                    onClick={() => chooseRecipeForDay(selectingDay, r)}
-                    style={{
-                      cursor: "pointer",
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: 8,
-                      overflow: "hidden",
-                      background: theme.toolbarBackground,
-                      display: "flex",
-                      flexDirection: "column",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "100%",
-                        paddingTop: "56%",
-                        position: "relative",
-                        background: theme.borderLight,
-                      }}
-                    >
-                      <img
-                        src={
-                          r.image ||
-                          "https://via.placeholder.com/400x225?text=No+Image"
-                        }
-                        alt={r.name}
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                      />
-                    </div>
-                    <span
-                      style={{
-                        padding: 8,
-                        fontSize: 14,
-                        textAlign: "center",
-                      }}
-                    >
-                      {r.name}
-                    </span>
-                  </div>
-                ))}
+              Filter meal generation by collection
             </div>
 
-            <button
-              onClick={() => setSelectingDay(null)}
-              style={{
-                marginTop: 18,
-                padding: "10px 20px",
-                background: theme.buttonNeutral,
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-              }}
-            >
-              Close
-            </button>
+            {collectionsLoading ? (
+              <div style={{ color: theme.textSecondary, fontSize: "14px" }}>
+                Loading collections...
+              </div>
+            ) : collections.length === 0 ? (
+              <div style={{ color: theme.textSecondary, fontSize: "14px" }}>
+                No collections available
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                {collections.map((collection) => {
+                  const active = selectedCollections.includes(collection._id);
+
+                  return (
+                    <button
+                      key={collection._id}
+                      onClick={() => handleCollectionChange(collection._id)}
+                      style={{
+                        padding: "10px 14px",
+                        borderRadius: "999px",
+                        border: `1px solid ${active ? collection.color : theme.border}`,
+                        backgroundColor: active ? collection.color : theme.cardBackground,
+                        color: active ? "white" : theme.text,
+                        cursor: "pointer",
+                        fontWeight: 600,
+                        fontSize: "13px",
+                      }}
+                    >
+                      {collection.icon || "📁"} {collection.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div
+            style={{
+              width: "100%",
+              marginTop: "8px",
+              display: "flex",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "8px",
+              fontSize: "14px",
+              color: theme.textSecondary,
+            }}
+          >
+            <span>📚 {allRecipes.length} recipes available</span>
+            <span>
+              {selectedCollections.length > 0
+                ? `${filteredRecipes.length} recipes in selected collections`
+                : "Using all recipes"}
+            </span>
           </div>
         </div>
-      )}
 
-      {/* -------------- print styles -------------- */}
-      <style>{`
-        @media print {
-          body * { visibility: hidden; }
-          #root > * { visibility: hidden; }
-          #root .print-area, #root .print-area * { visibility: visible; }
-          #root .print-area { position: absolute; inset: 0; }
-        }
-      `}</style>
+        {loading ? (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "60px 20px",
+              color: theme.textSecondary,
+            }}
+          >
+            <p style={{ fontSize: "18px" }}>Loading weekly meals...</p>
+          </div>
+        ) : error ? (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "60px 20px",
+              border: `1px dashed ${theme.border}`,
+              borderRadius: "12px",
+              backgroundColor: theme.toolbarBackground,
+            }}
+          >
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}>⚠️</div>
+            <p style={{ margin: "0 0 16px", fontSize: "20px", color: theme.text }}>
+              Failed to load weekly meals
+            </p>
+            <p style={{ margin: "0 0 20px", color: theme.textSecondary }}>{error}</p>
+            <button
+              onClick={loadPageData}
+              style={{
+                padding: "12px 24px",
+                backgroundColor: theme.buttonPrimary,
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        ) : allRecipes.length === 0 ? (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "60px 20px",
+              border: `1px dashed ${theme.border}`,
+              borderRadius: "12px",
+              backgroundColor: theme.toolbarBackground,
+            }}
+          >
+            <div style={{ fontSize: "64px", marginBottom: "16px" }}>📖</div>
+            <p style={{ margin: "0 0 16px", fontSize: "20px", color: theme.text }}>
+              No recipes saved yet
+            </p>
+            <p style={{ margin: "0 0 20px", color: theme.textSecondary }}>
+              Add some recipes first to generate your weekly meal plan.
+            </p>
+            <button
+              onClick={() => navigate("/add")}
+              style={{
+                padding: "12px 24px",
+                backgroundColor: theme.buttonSuccess,
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              ＋ Add Recipe
+            </button>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: "20px",
+            }}
+          >
+            {DAYS_OF_WEEK.map((day) => {
+              const entry = getDayEntry(day);
+
+              if (entry?.disabled) {
+                return (
+                  <DisabledDayCard
+                    key={day}
+                    day={day}
+                    theme={theme}
+                    onReactivate={() => handleReactivateDay(day)}
+                  />
+                );
+              }
+
+              if (!entry?.recipe) {
+                return (
+                  <EmptyDayCard
+                    key={day}
+                    day={day}
+                    theme={theme}
+                    onSelectMeal={() => setPickerDay(day)}
+                  />
+                );
+              }
+
+              return (
+                <MealDayCard
+                  key={day}
+                  day={day}
+                  entry={entry}
+                  onReroll={() => handleReroll(day)}
+                  onView={handleView}
+                  onAddToShoppingList={(recipe) => handleAddToShoppingList(recipe, day)}
+                  onDeleteDay={() => handleDeleteDay(day)}
+                  onSelectMeal={() => setPickerDay(day)}
+                  isRerolling={rerollingDay === day}
+                  isAddingToList={addingToListDay === day}
+                  theme={theme}
+                />
+              );
+            })}
+          </div>
+        )}
+
+        {!loading && !error && allRecipes.length > 0 && !hasAnyMeals && (
+          <div
+            style={{
+              marginTop: "32px",
+              padding: "24px",
+              backgroundColor: theme.toolbarBackground,
+              borderRadius: "12px",
+              border: `1px solid ${theme.border}`,
+              textAlign: "center",
+            }}
+          >
+            <h3 style={{ margin: "0 0 12px", color: theme.text }}>👆 Get Started</h3>
+            <p style={{ margin: 0, color: theme.textSecondary }}>
+              Click <strong>"Generate Meals"</strong> to build your weekly plan, or
+              manually select meals for specific days.
+            </p>
+          </div>
+        )}
+
+        <div className="print-menu" style={{ display: "none" }}>
+          <h1 style={{ marginBottom: "8px" }}>Weekly Meal Plan</h1>
+          <p style={{ marginBottom: "24px" }}>
+            Printed from SnackThat
+          </p>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: "20px",
+            }}
+          >
+            {DAYS_OF_WEEK.map((day) => {
+              const entry = getDayEntry(day);
+
+              if (!entry?.recipe || entry?.disabled) return null;
+
+              return (
+                <div
+                  key={`print-${day}`}
+                  style={{
+                    border: "1px solid #ccc",
+                    borderRadius: "12px",
+                    overflow: "hidden",
+                    breakInside: "avoid",
+                  }}
+                >
+                  <img
+                    src={
+                      entry.recipe.image ||
+                      "https://via.placeholder.com/400x225?text=No+Image"
+                    }
+                    alt={entry.recipe.name}
+                    style={{
+                      width: "100%",
+                      height: "180px",
+                      objectFit: "cover",
+                      display: "block",
+                    }}
+                  />
+                  <div style={{ padding: "12px" }}>
+                    <div style={{ fontWeight: 700, marginBottom: "6px" }}>{day}</div>
+                    <div>{entry.recipe.name}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </>
   );
 };

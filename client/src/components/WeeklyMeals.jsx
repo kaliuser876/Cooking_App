@@ -16,16 +16,7 @@ const DAYS_OF_WEEK = [
 ];
 
 const DiceIcon = ({ size = 20 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
     <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
     <circle cx="15.5" cy="8.5" r="1.5" fill="currentColor" />
@@ -36,16 +27,7 @@ const DiceIcon = ({ size = 20 }) => (
 );
 
 const ShuffleIcon = ({ size = 20 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="16 3 21 3 21 8" />
     <line x1="4" y1="20" x2="21" y2="3" />
     <polyline points="21 16 21 21 16 21" />
@@ -55,16 +37,7 @@ const ShuffleIcon = ({ size = 20 }) => (
 );
 
 const CartIcon = ({ size = 18 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="9" cy="21" r="1" />
     <circle cx="20" cy="21" r="1" />
     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
@@ -72,19 +45,24 @@ const CartIcon = ({ size = 18 }) => (
 );
 
 const PrintIcon = ({ size = 18 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="6 9 6 2 18 2 18 9" />
     <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
     <rect x="6" y="14" width="12" height="8" />
+  </svg>
+);
+
+const LockIcon = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
+const UnlockIcon = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" />
+    <path d="M7 11V7a5 5 0 0 1 9.9-1" />
   </svg>
 );
 
@@ -137,14 +115,7 @@ const Toast = ({ message, type, onClose }) => {
   );
 };
 
-const MealPickerModal = ({
-  open,
-  day,
-  recipes,
-  onClose,
-  onSelect,
-  theme,
-}) => {
+const MealPickerModal = ({ open, day, recipes, onClose, onSelect, theme }) => {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -175,8 +146,8 @@ const MealPickerModal = ({
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%",
-          maxWidth: "720px",
-          maxHeight: "85vh",
+          maxWidth: "980px",
+          maxHeight: "88vh",
           overflow: "hidden",
           background: theme.cardBackground,
           borderRadius: "16px",
@@ -238,10 +209,10 @@ const MealPickerModal = ({
         <div
           style={{
             overflowY: "auto",
-            padding: "12px",
+            padding: "16px",
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: "12px",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: "16px",
           }}
         >
           {filtered.length === 0 ? (
@@ -270,17 +241,9 @@ const MealPickerModal = ({
                   textAlign: "left",
                 }}
               >
-                <div
-                  style={{
-                    height: "120px",
-                    background: theme.borderLight,
-                  }}
-                >
+                <div style={{ height: "160px", background: theme.borderLight }}>
                   <img
-                    src={
-                      recipe.image ||
-                      "https://via.placeholder.com/400x225?text=No+Image"
-                    }
+                    src={recipe.image || "https://via.placeholder.com/400x225?text=No+Image"}
                     alt={recipe.name}
                     style={{
                       width: "100%",
@@ -289,18 +252,21 @@ const MealPickerModal = ({
                     }}
                   />
                 </div>
-                <div style={{ padding: "12px" }}>
+                <div style={{ padding: "14px" }}>
                   <div
                     style={{
                       color: theme.text,
-                      fontWeight: 600,
-                      fontSize: "14px",
-                      marginBottom: "6px",
+                      fontWeight: 700,
+                      fontSize: "16px",
+                      lineHeight: 1.35,
+                      marginBottom: "8px",
+                      whiteSpace: "normal",
+                      wordBreak: "break-word",
                     }}
                   >
                     {recipe.name}
                   </div>
-                  <div style={{ color: theme.textSecondary, fontSize: "12px" }}>
+                  <div style={{ color: theme.textSecondary, fontSize: "13px" }}>
                     {recipe.ingredients?.length || 0} ingredients
                   </div>
                 </div>
@@ -313,7 +279,7 @@ const MealPickerModal = ({
   );
 };
 
-const EmptyDayCard = ({ day, theme, onSelectMeal }) => (
+const EmptyDayCard = ({ day, theme, onSelectMeal, onReroll }) => (
   <div
     style={{
       backgroundColor: theme.cardBackground,
@@ -342,20 +308,36 @@ const EmptyDayCard = ({ day, theme, onSelectMeal }) => (
     <p style={{ margin: "0 0 18px", color: theme.textMuted, fontSize: "14px" }}>
       No meal planned
     </p>
-    <button
-      onClick={onSelectMeal}
-      style={{
-        padding: "10px 14px",
-        backgroundColor: theme.buttonPrimary,
-        color: "white",
-        border: "none",
-        borderRadius: "8px",
-        cursor: "pointer",
-        fontWeight: 600,
-      }}
-    >
-      Select Meal
-    </button>
+    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
+      <button
+        onClick={onSelectMeal}
+        style={{
+          padding: "10px 14px",
+          backgroundColor: theme.buttonPrimary,
+          color: "white",
+          border: "none",
+          borderRadius: "8px",
+          cursor: "pointer",
+          fontWeight: 600,
+        }}
+      >
+        Select Meal
+      </button>
+      <button
+        onClick={onReroll}
+        style={{
+          padding: "10px 14px",
+          backgroundColor: "#ff9800",
+          color: "white",
+          border: "none",
+          borderRadius: "8px",
+          cursor: "pointer",
+          fontWeight: 600,
+        }}
+      >
+        Reroll
+      </button>
+    </div>
   </div>
 );
 
@@ -423,12 +405,14 @@ const MealDayCard = ({
   onAddToShoppingList,
   onDeleteDay,
   onSelectMeal,
+  onToggleLock,
   isRerolling,
   isAddingToList,
   theme,
 }) => {
   const recipe = entry?.recipe;
   const [imageError, setImageError] = useState(false);
+  const isLocked = Boolean(entry?.locked);
 
   return (
     <div
@@ -471,24 +455,37 @@ const MealDayCard = ({
               MANUAL
             </span>
           )}
+          {isLocked && (
+            <span
+              style={{
+                background: "rgba(255,255,255,0.2)",
+                borderRadius: "6px",
+                padding: "6px 8px",
+                fontSize: "11px",
+              }}
+            >
+              LOCKED
+            </span>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation();
               onReroll();
             }}
-            disabled={isRerolling}
+            disabled={isRerolling || isLocked}
             style={{
               background: "rgba(255,255,255,0.2)",
               border: "none",
               borderRadius: "6px",
               padding: "6px 10px",
-              cursor: isRerolling ? "not-allowed" : "pointer",
+              cursor: isRerolling || isLocked ? "not-allowed" : "pointer",
               color: "white",
               fontSize: "12px",
               fontWeight: 500,
               display: "flex",
               alignItems: "center",
               gap: "6px",
+              opacity: isLocked ? 0.6 : 1,
             }}
           >
             <DiceIcon size={14} />
@@ -639,6 +636,28 @@ const MealDayCard = ({
           >
             Delete Day
           </button>
+
+          <button
+            onClick={onToggleLock}
+            style={{
+              gridColumn: "1 / -1",
+              padding: "10px",
+              backgroundColor: isLocked ? "#6d4c41" : "#546e7a",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontWeight: 600,
+              fontSize: "13px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+            }}
+          >
+            {isLocked ? <UnlockIcon size={14} /> : <LockIcon size={14} />}
+            {isLocked ? "Unlock Day" : "Lock Day"}
+          </button>
         </div>
       </div>
     </div>
@@ -668,49 +687,28 @@ const WeeklyMeals = () => {
 
   const fetchAllRecipes = useCallback(async () => {
     const res = await fetch(`${API_BASE_URL}/api/recipes?limit=1000`, {
-      headers: {
-        ...getAuthHeaders(),
-      },
+      headers: { ...getAuthHeaders() },
     });
-
     const data = await res.json().catch(() => null);
-
-    if (!res.ok) {
-      throw new Error(data?.message || "Failed to fetch recipes");
-    }
-
+    if (!res.ok) throw new Error(data?.message || "Failed to fetch recipes");
     return Array.isArray(data?.recipes) ? data.recipes : [];
   }, []);
 
   const fetchCollections = useCallback(async () => {
     const res = await fetch(`${API_BASE_URL}/api/collections`, {
-      headers: {
-        ...getAuthHeaders(),
-      },
+      headers: { ...getAuthHeaders() },
     });
-
     const data = await res.json().catch(() => null);
-
-    if (!res.ok) {
-      throw new Error(data?.message || "Failed to fetch collections");
-    }
-
+    if (!res.ok) throw new Error(data?.message || "Failed to fetch collections");
     return Array.isArray(data) ? data : [];
   }, []);
 
   const fetchWeeklyMenu = useCallback(async () => {
     const res = await fetch(`${API_BASE_URL}/api/weekly-menu`, {
-      headers: {
-        ...getAuthHeaders(),
-      },
+      headers: { ...getAuthHeaders() },
     });
-
     const data = await res.json().catch(() => null);
-
-    if (!res.ok) {
-      throw new Error(data?.message || "Failed to fetch weekly menu");
-    }
-
+    if (!res.ok) throw new Error(data?.message || "Failed to fetch weekly menu");
     return data;
   }, []);
 
@@ -749,7 +747,13 @@ const WeeklyMeals = () => {
   }, [loadPageData]);
 
   const getDayEntry = useCallback(
-    (day) => weeklyMenu?.days?.[day] || { recipe: null, disabled: false, manuallySelected: false },
+    (day) =>
+      weeklyMenu?.days?.[day] || {
+        recipe: null,
+        disabled: false,
+        manuallySelected: false,
+        locked: false,
+      },
     [weeklyMenu]
   );
 
@@ -764,13 +768,28 @@ const WeeklyMeals = () => {
 
   const saveDay = useCallback(
     async (day, payload, successMessage) => {
+      const current = getDayEntry(day);
+
       const res = await fetch(`${API_BASE_URL}/api/weekly-menu/day/${day}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           ...getAuthHeaders(),
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          recipe:
+            payload.recipe !== undefined
+              ? payload.recipe
+              : current?.recipe?._id || null,
+          disabled:
+            payload.disabled !== undefined ? payload.disabled : Boolean(current?.disabled),
+          manuallySelected:
+            payload.manuallySelected !== undefined
+              ? payload.manuallySelected
+              : Boolean(current?.manuallySelected),
+          locked:
+            payload.locked !== undefined ? payload.locked : Boolean(current?.locked),
+        }),
       });
 
       const data = await res.json().catch(() => null);
@@ -788,7 +807,7 @@ const WeeklyMeals = () => {
 
       if (successMessage) showToast(successMessage, "success");
     },
-    [showToast]
+    [getDayEntry, showToast]
   );
 
   const handleGenerate = useCallback(async () => {
@@ -800,13 +819,22 @@ const WeeklyMeals = () => {
     setGenerating(true);
 
     try {
+      const lockedDays = {};
+      DAYS_OF_WEEK.forEach((day) => {
+        const entry = getDayEntry(day);
+        lockedDays[day] = Boolean(entry?.locked);
+      });
+
       const res = await fetch(`${API_BASE_URL}/api/weekly-menu/generate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...getAuthHeaders(),
         },
-        body: JSON.stringify({ selectedCollections }),
+        body: JSON.stringify({
+          selectedCollections,
+          lockedDays,
+        }),
       });
 
       const data = await res.json().catch(() => null);
@@ -829,11 +857,16 @@ const WeeklyMeals = () => {
     } finally {
       setGenerating(false);
     }
-  }, [allRecipes.length, selectedCollections, showToast]);
+  }, [allRecipes.length, selectedCollections, getDayEntry, showToast]);
 
   const handleReroll = useCallback(
     async (day) => {
       const currentEntry = getDayEntry(day);
+
+      if (currentEntry?.locked) {
+        showToast(`${day} is locked`, "error");
+        return;
+      }
 
       if (filteredRecipes.length === 0) {
         showToast("No recipes available for this filter", "error");
@@ -863,8 +896,7 @@ const WeeklyMeals = () => {
           available = filteredRecipes;
         }
 
-        const randomRecipe =
-          available[Math.floor(Math.random() * available.length)];
+        const randomRecipe = available[Math.floor(Math.random() * available.length)];
 
         await saveDay(
           day,
@@ -927,7 +959,7 @@ const WeeklyMeals = () => {
 
   const handleAddAllToShoppingList = async () => {
     const mealsWithIngredients = DAYS_OF_WEEK.map((day) => getDayEntry(day))
-      .filter((entry) => entry?.recipe?.ingredients?.length > 0)
+      .filter((entry) => entry?.recipe?.ingredients?.length > 0 && !entry?.disabled)
       .map((entry) => entry.recipe);
 
     if (mealsWithIngredients.length === 0) {
@@ -967,7 +999,7 @@ const WeeklyMeals = () => {
     try {
       await saveDay(
         day,
-        { recipe: null, disabled: true, manuallySelected: false },
+        { recipe: null, disabled: true, manuallySelected: false, locked: false },
         `${day} removed from rotation`
       );
     } catch (err) {
@@ -979,7 +1011,7 @@ const WeeklyMeals = () => {
     try {
       await saveDay(
         day,
-        { recipe: null, disabled: false, manuallySelected: false },
+        { recipe: null, disabled: false, manuallySelected: false, locked: false },
         `${day} reactivated`
       );
     } catch (err) {
@@ -1007,15 +1039,29 @@ const WeeklyMeals = () => {
     }
   };
 
+  const handleToggleLock = async (day) => {
+    const entry = getDayEntry(day);
+    const nextLocked = !entry?.locked;
+
+    try {
+      await saveDay(
+        day,
+        { locked: nextLocked },
+        nextLocked ? `${day} locked` : `${day} unlocked`
+      );
+    } catch (err) {
+      console.error(err);
+      showToast(err?.message || "Failed to update lock", "error");
+    }
+  };
+
   const handleClear = async () => {
     if (!window.confirm("Clear all weekly meals?")) return;
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/weekly-menu/clear`, {
         method: "POST",
-        headers: {
-          ...getAuthHeaders(),
-        },
+        headers: { ...getAuthHeaders() },
       });
 
       const data = await res.json().catch(() => null);
@@ -1048,6 +1094,7 @@ const WeeklyMeals = () => {
           recipe: entry?.recipe?._id || null,
           disabled: Boolean(entry?.disabled),
           manuallySelected: Boolean(entry?.manuallySelected),
+          locked: Boolean(entry?.locked),
         };
       });
 
@@ -1077,7 +1124,102 @@ const WeeklyMeals = () => {
   };
 
   const handlePrint = () => {
-    window.print();
+    const printableDays = DAYS_OF_WEEK.map((day) => ({
+      day,
+      entry: getDayEntry(day),
+    })).filter(({ entry }) => entry?.recipe && !entry?.disabled);
+
+    if (printableDays.length === 0) {
+      showToast("No meals available to print", "error");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=1000,height=800");
+    if (!printWindow) {
+      showToast("Popup blocked. Please allow popups to print.", "error");
+      return;
+    }
+
+    const cardsHtml = printableDays
+      .map(
+        ({ day, entry }) => `
+          <div class="meal-card">
+            <img src="${entry.recipe.image || "https://via.placeholder.com/400x225?text=No+Image"}" alt="${entry.recipe.name}" />
+            <div class="meal-content">
+              <div class="meal-day">${day}</div>
+              <div class="meal-name">${entry.recipe.name}</div>
+            </div>
+          </div>
+        `
+      )
+      .join("");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Weekly Meal Plan</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              margin: 24px;
+              color: #222;
+            }
+            h1 {
+              margin: 0 0 8px;
+            }
+            p {
+              margin: 0 0 24px;
+              color: #666;
+            }
+            .grid {
+              display: grid;
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+              gap: 20px;
+            }
+            .meal-card {
+              border: 1px solid #ddd;
+              border-radius: 12px;
+              overflow: hidden;
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+            .meal-card img {
+              width: 100%;
+              height: 220px;
+              object-fit: cover;
+              display: block;
+            }
+            .meal-content {
+              padding: 12px;
+            }
+            .meal-day {
+              font-weight: 700;
+              margin-bottom: 6px;
+            }
+            .meal-name {
+              font-size: 16px;
+              line-height: 1.35;
+            }
+            @media print {
+              body {
+                margin: 12px;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Weekly Meal Plan</h1>
+          <p>Printed from SnackThat</p>
+          <div class="grid">${cardsHtml}</div>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 300);
   };
 
   const activeDays = DAYS_OF_WEEK.filter((day) => {
@@ -1089,31 +1231,6 @@ const WeeklyMeals = () => {
 
   return (
     <>
-      <style>
-        {`
-          @media print {
-            body * {
-              visibility: hidden;
-            }
-            .print-menu, .print-menu * {
-              visibility: visible;
-            }
-            .print-menu {
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 100%;
-              padding: 24px;
-              background: white;
-              color: black;
-            }
-            .no-print {
-              display: none !important;
-            }
-          }
-        `}
-      </style>
-
       {toast && (
         <Toast
           message={toast.message}
@@ -1133,7 +1250,6 @@ const WeeklyMeals = () => {
 
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
         <div
-          className="no-print"
           style={{
             display: "flex",
             justifyContent: "space-between",
@@ -1155,7 +1271,6 @@ const WeeklyMeals = () => {
         </div>
 
         <div
-          className="no-print"
           style={{
             display: "flex",
             flexWrap: "wrap",
@@ -1426,6 +1541,7 @@ const WeeklyMeals = () => {
                     day={day}
                     theme={theme}
                     onSelectMeal={() => setPickerDay(day)}
+                    onReroll={() => handleReroll(day)}
                   />
                 );
               }
@@ -1440,6 +1556,7 @@ const WeeklyMeals = () => {
                   onAddToShoppingList={(recipe) => handleAddToShoppingList(recipe, day)}
                   onDeleteDay={() => handleDeleteDay(day)}
                   onSelectMeal={() => setPickerDay(day)}
+                  onToggleLock={() => handleToggleLock(day)}
                   isRerolling={rerollingDay === day}
                   isAddingToList={addingToListDay === day}
                   theme={theme}
@@ -1462,61 +1579,10 @@ const WeeklyMeals = () => {
           >
             <h3 style={{ margin: "0 0 12px", color: theme.text }}>👆 Get Started</h3>
             <p style={{ margin: 0, color: theme.textSecondary }}>
-              Click <strong>"Generate Meals"</strong> to build your weekly plan, or
-              manually select meals for specific days.
+              Click <strong>"Generate Meals"</strong> to build your weekly plan, or manually select meals for specific days.
             </p>
           </div>
         )}
-
-        <div className="print-menu" style={{ display: "none" }}>
-          <h1 style={{ marginBottom: "8px" }}>Weekly Meal Plan</h1>
-          <p style={{ marginBottom: "24px" }}>
-            Printed from SnackThat
-          </p>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-              gap: "20px",
-            }}
-          >
-            {DAYS_OF_WEEK.map((day) => {
-              const entry = getDayEntry(day);
-
-              if (!entry?.recipe || entry?.disabled) return null;
-
-              return (
-                <div
-                  key={`print-${day}`}
-                  style={{
-                    border: "1px solid #ccc",
-                    borderRadius: "12px",
-                    overflow: "hidden",
-                    breakInside: "avoid",
-                  }}
-                >
-                  <img
-                    src={
-                      entry.recipe.image ||
-                      "https://via.placeholder.com/400x225?text=No+Image"
-                    }
-                    alt={entry.recipe.name}
-                    style={{
-                      width: "100%",
-                      height: "180px",
-                      objectFit: "cover",
-                      display: "block",
-                    }}
-                  />
-                  <div style={{ padding: "12px" }}>
-                    <div style={{ fontWeight: 700, marginBottom: "6px" }}>{day}</div>
-                    <div>{entry.recipe.name}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       </div>
     </>
   );

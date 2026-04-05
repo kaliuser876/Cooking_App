@@ -1,20 +1,21 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-export const sendVerificationEmail = async (email, token) => {
-
-  if (!process.env.RESEND_API_KEY) {
-  console.warn("⚠️ RESEND_API_KEY missing — email disabled");
-}
-
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
-  const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+
+const EMAIL_FROM = process.env.EMAIL_FROM || "SnackThat <noreply@snackthat.store>";
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://www.snackthat.store";
+
+export const sendVerificationEmail = async (email, token) => {
+  if (!resend) {
+    throw new Error("RESEND_API_KEY missing — email sending is disabled");
+  }
+
+  const verificationUrl = `${FRONTEND_URL}/verify-email?token=${token}`;
 
   const { data, error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM || "onboarding@resend.dev",
+    from: EMAIL_FROM,
     to: email,
     subject: "Verify Your Email - Recipe App",
     html: `
@@ -47,10 +48,14 @@ const resend = process.env.RESEND_API_KEY
 };
 
 export const sendPasswordResetEmail = async (email, token) => {
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+  if (!resend) {
+    throw new Error("RESEND_API_KEY missing — email sending is disabled");
+  }
+
+  const resetUrl = `${FRONTEND_URL}/reset-password?token=${token}`;
 
   const { data, error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM || "onboarding@resend.dev",
+    from: EMAIL_FROM,
     to: email,
     subject: "Reset Your Password - Recipe App",
     html: `

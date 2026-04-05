@@ -1,7 +1,6 @@
 import express from "express";
 import WeeklyMenu from "../models/WeeklyMenu.js";
 import Recipe from "../models/Recipe.js";
-import Collection from "../models/Collection.js";
 import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -19,13 +18,55 @@ const DAYS_OF_WEEK = [
 ];
 
 const getDefaultDays = () => ({
-  Monday: { recipe: null, disabled: false, manuallySelected: false },
-  Tuesday: { recipe: null, disabled: false, manuallySelected: false },
-  Wednesday: { recipe: null, disabled: false, manuallySelected: false },
-  Thursday: { recipe: null, disabled: false, manuallySelected: false },
-  Friday: { recipe: null, disabled: false, manuallySelected: false },
-  Saturday: { recipe: null, disabled: false, manuallySelected: false },
-  Sunday: { recipe: null, disabled: false, manuallySelected: false },
+  Monday: {
+    recipe: null,
+    disabled: false,
+    manuallySelected: false,
+    locked: false,
+    preferredCollections: [],
+  },
+  Tuesday: {
+    recipe: null,
+    disabled: false,
+    manuallySelected: false,
+    locked: false,
+    preferredCollections: [],
+  },
+  Wednesday: {
+    recipe: null,
+    disabled: false,
+    manuallySelected: false,
+    locked: false,
+    preferredCollections: [],
+  },
+  Thursday: {
+    recipe: null,
+    disabled: false,
+    manuallySelected: false,
+    locked: false,
+    preferredCollections: [],
+  },
+  Friday: {
+    recipe: null,
+    disabled: false,
+    manuallySelected: false,
+    locked: false,
+    preferredCollections: [],
+  },
+  Saturday: {
+    recipe: null,
+    disabled: false,
+    manuallySelected: false,
+    locked: false,
+    preferredCollections: [],
+  },
+  Sunday: {
+    recipe: null,
+    disabled: false,
+    manuallySelected: false,
+    locked: false,
+    preferredCollections: [],
+  },
 });
 
 const populateMenu = async (menu) => {
@@ -40,7 +81,16 @@ const populateMenu = async (menu) => {
     .populate("days.Sunday.recipe");
 };
 
-// GET current user's weekly menu
+const normalizeDay = (day = {}) => ({
+  recipe: day.recipe || null,
+  disabled: Boolean(day.disabled),
+  manuallySelected: Boolean(day.manuallySelected),
+  locked: Boolean(day.locked),
+  preferredCollections: Array.isArray(day.preferredCollections)
+    ? day.preferredCollections
+    : [],
+});
+
 router.get("/", async (req, res) => {
   try {
     let menu = await WeeklyMenu.findOne({ userId: req.user._id });
@@ -61,7 +111,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-// PUT replace/save full weekly menu
 router.put("/", async (req, res) => {
   try {
     const { selectedCollections = [], days = {} } = req.body;
@@ -70,11 +119,7 @@ router.put("/", async (req, res) => {
 
     for (const day of DAYS_OF_WEEK) {
       if (days[day]) {
-        mergedDays[day] = {
-          recipe: days[day].recipe || null,
-          disabled: Boolean(days[day].disabled),
-          manuallySelected: Boolean(days[day].manuallySelected),
-        };
+        mergedDays[day] = normalizeDay(days[day]);
       }
     }
 
@@ -100,7 +145,6 @@ router.put("/", async (req, res) => {
   }
 });
 
-// POST generate weekly menu
 router.post("/generate", async (req, res) => {
   try {
     const { selectedCollections = [] } = req.body;
@@ -127,50 +171,92 @@ router.post("/generate", async (req, res) => {
       });
     }
 
-    const nextDays = { ...getDefaultDays(), ...existingMenu.days.toObject?.() };
+    const existingDaysRaw =
+      typeof existingMenu.days?.toObject === "function"
+        ? existingMenu.days.toObject()
+        : existingMenu.days || {};
 
-    const activeDays = DAYS_OF_WEEK.filter((day) => !nextDays[day]?.disabled);
-    const shuffled = [...allRecipes].sort(() => Math.random() - 0.5);
+    const nextDays = getDefaultDays();
+
+    for (const day of DAYS_OF_WEEK) {
+      nextDays[day] = {
+        ...nextDays[day],
+        ...normalizeDay(existingDaysRaw[day] || {}),
+      };
+    }
 
     const usedIds = new Set();
-    for (const day of activeDays) {
+
+    for (const day of DAYS_OF_WEEK) {
       const current = nextDays[day];
 
-      if (current?.manuallySelected && current?.recipe) {
+      if (current.disabled) continue;
+
+      if ((current.locked || current.manuallySelected) && current.recipe) {
         usedIds.add(String(current.recipe));
       }
     }
 
-    for (const day of activeDays) {
+    for (const day of DAYS_OF_WEEK) {
       const current = nextDays[day];
 
-      if (current?.manuallySelected && current?.recipe) {
+      if (current.disabled) {
+        nextDays[day] = {
+          recipe: null,
+          disabled: true,
+          manuallySelected: false,
+          locked: false,
+          preferredCollections: current.preferredCollections || [],
+        };
         continue;
       }
 
-      let picked = shuffled.find((recipe) => !usedIds.has(String(recipe._id)));
-
-      if (!picked) {
-        picked = shuffled[Math.floor(Math.random() * shuffled.length)];
+      if ((current.locked || current.manuallySelected) && current.recipe) {
+        continue;
       }
+
+      let dayPool = allRecipes;
+
+      if (
+        Array.isArray(current.preferredCollections) &&
+        current.preferredCollections.length > 0
+      ) {
+        dayPool = allRecipes.filter((recipe) =>
+          Array.isArray(recipe.collections) &&
+          recipe.collections.some((c) =>
+            current.preferredCollections.some(
+              (pc) => String(pc) === String(c)
+            )
+          )
+        );
+      }
+
+      if (!dayPool.length) {
+        dayPool = allRecipes;
+      }
+
+      let available = dayPool.filter(
+        (recipe) => !usedIds.has(String(recipe._id))
+      );
+
+      if (!available.length) {
+        available = dayPool;
+      }
+
+      const picked =
+        available[Math.floor(Math.random() * available.length)] || null;
 
       nextDays[day] = {
         recipe: picked ? picked._id : null,
         disabled: false,
         manuallySelected: false,
+        locked: false,
+        preferredCollections: current.preferredCollections || [],
       };
 
       if (picked) {
         usedIds.add(String(picked._id));
       }
-    }
-
-    for (const day of DAYS_OF_WEEK.filter((day) => nextDays[day]?.disabled)) {
-      nextDays[day] = {
-        recipe: null,
-        disabled: true,
-        manuallySelected: false,
-      };
     }
 
     const menu = await WeeklyMenu.findOneAndUpdate(
@@ -195,7 +281,6 @@ router.post("/generate", async (req, res) => {
   }
 });
 
-// PATCH one day
 router.patch("/day/:day", async (req, res) => {
   try {
     const day = req.params.day;
@@ -204,7 +289,13 @@ router.patch("/day/:day", async (req, res) => {
       return res.status(400).json({ message: "Invalid day" });
     }
 
-    const { recipe, disabled = false, manuallySelected = false } = req.body;
+    const {
+      recipe,
+      disabled = false,
+      manuallySelected = false,
+      locked = false,
+      preferredCollections = [],
+    } = req.body;
 
     if (recipe) {
       const foundRecipe = await Recipe.findOne({
@@ -231,6 +322,10 @@ router.patch("/day/:day", async (req, res) => {
       recipe: disabled ? null : recipe || null,
       disabled: Boolean(disabled),
       manuallySelected: Boolean(!disabled && manuallySelected),
+      locked: Boolean(!disabled && locked),
+      preferredCollections: Array.isArray(preferredCollections)
+        ? preferredCollections
+        : [],
     };
 
     await menu.save();
@@ -243,7 +338,6 @@ router.patch("/day/:day", async (req, res) => {
   }
 });
 
-// POST clear menu
 router.post("/clear", async (req, res) => {
   try {
     const menu = await WeeklyMenu.findOneAndUpdate(

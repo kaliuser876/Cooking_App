@@ -16,7 +16,16 @@ const DAYS_OF_WEEK = [
 ];
 
 const DiceIcon = ({ size = 20 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
     <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
     <circle cx="15.5" cy="8.5" r="1.5" fill="currentColor" />
@@ -27,7 +36,16 @@ const DiceIcon = ({ size = 20 }) => (
 );
 
 const ShuffleIcon = ({ size = 20 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <polyline points="16 3 21 3 21 8" />
     <line x1="4" y1="20" x2="21" y2="3" />
     <polyline points="21 16 21 21 16 21" />
@@ -37,7 +55,16 @@ const ShuffleIcon = ({ size = 20 }) => (
 );
 
 const CartIcon = ({ size = 18 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <circle cx="9" cy="21" r="1" />
     <circle cx="20" cy="21" r="1" />
     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
@@ -45,24 +72,19 @@ const CartIcon = ({ size = 18 }) => (
 );
 
 const PrintIcon = ({ size = 18 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <polyline points="6 9 6 2 18 2 18 9" />
     <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
     <rect x="6" y="14" width="12" height="8" />
-  </svg>
-);
-
-const LockIcon = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="11" width="18" height="11" rx="2" />
-    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-  </svg>
-);
-
-const UnlockIcon = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="11" width="18" height="11" rx="2" />
-    <path d="M7 11V7a5 5 0 0 1 9.9-1" />
   </svg>
 );
 
@@ -134,7 +156,7 @@ const MealPickerModal = ({ open, day, recipes, onClose, onSelect, theme }) => {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.5)",
+        background: "rgba(0,0,0,0.55)",
         zIndex: 10000,
         display: "flex",
         alignItems: "center",
@@ -146,8 +168,8 @@ const MealPickerModal = ({ open, day, recipes, onClose, onSelect, theme }) => {
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%",
-          maxWidth: "980px",
-          maxHeight: "88vh",
+          maxWidth: "1100px",
+          maxHeight: "90vh",
           overflow: "hidden",
           background: theme.cardBackground,
           borderRadius: "16px",
@@ -211,7 +233,7 @@ const MealPickerModal = ({ open, day, recipes, onClose, onSelect, theme }) => {
             overflowY: "auto",
             padding: "16px",
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
             gap: "16px",
           }}
         >
@@ -239,9 +261,12 @@ const MealPickerModal = ({ open, day, recipes, onClose, onSelect, theme }) => {
                   cursor: "pointer",
                   padding: 0,
                   textAlign: "left",
+                  display: "grid",
+                  gridTemplateColumns: "140px 1fr",
+                  minHeight: "140px",
                 }}
               >
-                <div style={{ height: "160px", background: theme.borderLight }}>
+                <div style={{ height: "100%", background: theme.borderLight }}>
                   <img
                     src={recipe.image || "https://via.placeholder.com/400x225?text=No+Image"}
                     alt={recipe.name}
@@ -252,21 +277,28 @@ const MealPickerModal = ({ open, day, recipes, onClose, onSelect, theme }) => {
                     }}
                   />
                 </div>
-                <div style={{ padding: "14px" }}>
+                <div
+                  style={{
+                    padding: "14px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    minWidth: 0,
+                  }}
+                >
                   <div
                     style={{
                       color: theme.text,
                       fontWeight: 700,
                       fontSize: "16px",
-                      lineHeight: 1.35,
-                      marginBottom: "8px",
+                      lineHeight: 1.4,
                       whiteSpace: "normal",
-                      wordBreak: "break-word",
+                      overflowWrap: "anywhere",
                     }}
                   >
                     {recipe.name}
                   </div>
-                  <div style={{ color: theme.textSecondary, fontSize: "13px" }}>
+                  <div style={{ color: theme.textSecondary, fontSize: "13px", marginTop: "12px" }}>
                     {recipe.ingredients?.length || 0} ingredients
                   </div>
                 </div>
@@ -406,13 +438,14 @@ const MealDayCard = ({
   onDeleteDay,
   onSelectMeal,
   onToggleLock,
+  collections,
+  onDayCollectionChange,
   isRerolling,
   isAddingToList,
   theme,
 }) => {
   const recipe = entry?.recipe;
   const [imageError, setImageError] = useState(false);
-  const isLocked = Boolean(entry?.locked);
 
   return (
     <div
@@ -455,7 +488,7 @@ const MealDayCard = ({
               MANUAL
             </span>
           )}
-          {isLocked && (
+          {entry?.locked && (
             <span
               style={{
                 background: "rgba(255,255,255,0.2)",
@@ -472,20 +505,20 @@ const MealDayCard = ({
               e.stopPropagation();
               onReroll();
             }}
-            disabled={isRerolling || isLocked}
+            disabled={isRerolling || entry?.locked}
             style={{
               background: "rgba(255,255,255,0.2)",
               border: "none",
               borderRadius: "6px",
               padding: "6px 10px",
-              cursor: isRerolling || isLocked ? "not-allowed" : "pointer",
+              cursor: isRerolling || entry?.locked ? "not-allowed" : "pointer",
               color: "white",
               fontSize: "12px",
               fontWeight: 500,
               display: "flex",
               alignItems: "center",
               gap: "6px",
-              opacity: isLocked ? 0.6 : 1,
+              opacity: entry?.locked ? 0.65 : 1,
             }}
           >
             <DiceIcon size={14} />
@@ -550,10 +583,50 @@ const MealDayCard = ({
             fontSize: "13px",
             color: theme.textMuted,
             marginBottom: "12px",
-            marginTop: "auto",
           }}
         >
           {recipe?.ingredients?.length || 0} ingredients
+        </div>
+
+        <div style={{ marginBottom: "12px" }}>
+          <div
+            style={{
+              fontSize: "12px",
+              fontWeight: 700,
+              color: theme.textSecondary,
+              marginBottom: "8px",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+            }}
+          >
+            Day Collections
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+            {collections.map((collection) => {
+              const active =
+                Array.isArray(entry?.preferredCollections) &&
+                entry.preferredCollections.includes(collection._id);
+
+              return (
+                <button
+                  key={collection._id}
+                  onClick={() => onDayCollectionChange(day, collection._id)}
+                  style={{
+                    padding: "6px 10px",
+                    borderRadius: "999px",
+                    border: `1px solid ${active ? collection.color : theme.border}`,
+                    backgroundColor: active ? collection.color : theme.cardBackground,
+                    color: active ? "white" : theme.text,
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    fontSize: "11px",
+                  }}
+                >
+                  {collection.icon || "📁"} {collection.name}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div
@@ -561,6 +634,7 @@ const MealDayCard = ({
             display: "grid",
             gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
             gap: "8px",
+            marginTop: "auto",
           }}
         >
           <button
@@ -642,21 +716,16 @@ const MealDayCard = ({
             style={{
               gridColumn: "1 / -1",
               padding: "10px",
-              backgroundColor: isLocked ? "#6d4c41" : "#546e7a",
+              backgroundColor: entry?.locked ? "#6d4c41" : "#546e7a",
               color: "white",
               border: "none",
               borderRadius: "8px",
               cursor: "pointer",
               fontWeight: 600,
               fontSize: "13px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
             }}
           >
-            {isLocked ? <UnlockIcon size={14} /> : <LockIcon size={14} />}
-            {isLocked ? "Unlock Day" : "Lock Day"}
+            {entry?.locked ? "Unlock Day" : "Lock Day"}
           </button>
         </div>
       </div>
@@ -753,6 +822,7 @@ const WeeklyMeals = () => {
         disabled: false,
         manuallySelected: false,
         locked: false,
+        preferredCollections: [],
       },
     [weeklyMenu]
   );
@@ -789,6 +859,10 @@ const WeeklyMeals = () => {
               : Boolean(current?.manuallySelected),
           locked:
             payload.locked !== undefined ? payload.locked : Boolean(current?.locked),
+          preferredCollections:
+            payload.preferredCollections !== undefined
+              ? payload.preferredCollections
+              : current?.preferredCollections || [],
         }),
       });
 
@@ -799,11 +873,6 @@ const WeeklyMeals = () => {
       }
 
       setWeeklyMenu(data);
-      setSelectedCollections(
-        Array.isArray(data?.selectedCollections)
-          ? data.selectedCollections.map((c) => (typeof c === "string" ? c : c._id))
-          : []
-      );
 
       if (successMessage) showToast(successMessage, "success");
     },
@@ -819,22 +888,13 @@ const WeeklyMeals = () => {
     setGenerating(true);
 
     try {
-      const lockedDays = {};
-      DAYS_OF_WEEK.forEach((day) => {
-        const entry = getDayEntry(day);
-        lockedDays[day] = Boolean(entry?.locked);
-      });
-
       const res = await fetch(`${API_BASE_URL}/api/weekly-menu/generate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...getAuthHeaders(),
         },
-        body: JSON.stringify({
-          selectedCollections,
-          lockedDays,
-        }),
+        body: JSON.stringify({ selectedCollections }),
       });
 
       const data = await res.json().catch(() => null);
@@ -857,7 +917,7 @@ const WeeklyMeals = () => {
     } finally {
       setGenerating(false);
     }
-  }, [allRecipes.length, selectedCollections, getDayEntry, showToast]);
+  }, [allRecipes.length, selectedCollections, showToast]);
 
   const handleReroll = useCallback(
     async (day) => {
@@ -868,8 +928,24 @@ const WeeklyMeals = () => {
         return;
       }
 
-      if (filteredRecipes.length === 0) {
-        showToast("No recipes available for this filter", "error");
+      let recipePool = filteredRecipes;
+
+      if (
+        Array.isArray(currentEntry?.preferredCollections) &&
+        currentEntry.preferredCollections.length > 0
+      ) {
+        recipePool = allRecipes.filter((recipe) =>
+          Array.isArray(recipe.collections) &&
+          recipe.collections.some((c) =>
+            currentEntry.preferredCollections.some(
+              (pc) => String(pc) === String(typeof c === "string" ? c : c._id)
+            )
+          )
+        );
+      }
+
+      if (recipePool.length === 0) {
+        showToast("No recipes available for this day filter", "error");
         return;
       }
 
@@ -880,20 +956,20 @@ const WeeklyMeals = () => {
           .map((d) => getDayEntry(d)?.recipe?._id)
           .filter(Boolean);
 
-        let available = filteredRecipes.filter(
+        let available = recipePool.filter(
           (recipe) =>
             !usedIds.includes(recipe._id) &&
             recipe._id !== currentEntry?.recipe?._id
         );
 
         if (available.length === 0) {
-          available = filteredRecipes.filter(
+          available = recipePool.filter(
             (recipe) => recipe._id !== currentEntry?.recipe?._id
           );
         }
 
         if (available.length === 0) {
-          available = filteredRecipes;
+          available = recipePool;
         }
 
         const randomRecipe = available[Math.floor(Math.random() * available.length)];
@@ -914,7 +990,7 @@ const WeeklyMeals = () => {
         setRerollingDay(null);
       }
     },
-    [filteredRecipes, getDayEntry, saveDay, showToast]
+    [allRecipes, filteredRecipes, getDayEntry, saveDay, showToast]
   );
 
   const handleView = useCallback(
@@ -999,7 +1075,13 @@ const WeeklyMeals = () => {
     try {
       await saveDay(
         day,
-        { recipe: null, disabled: true, manuallySelected: false, locked: false },
+        {
+          recipe: null,
+          disabled: true,
+          manuallySelected: false,
+          locked: false,
+          preferredCollections: [],
+        },
         `${day} removed from rotation`
       );
     } catch (err) {
@@ -1011,7 +1093,12 @@ const WeeklyMeals = () => {
     try {
       await saveDay(
         day,
-        { recipe: null, disabled: false, manuallySelected: false, locked: false },
+        {
+          recipe: null,
+          disabled: false,
+          manuallySelected: false,
+          locked: false,
+        },
         `${day} reactivated`
       );
     } catch (err) {
@@ -1055,6 +1142,30 @@ const WeeklyMeals = () => {
     }
   };
 
+  const handleDayCollectionChange = async (day, collectionId) => {
+    const entry = getDayEntry(day);
+    const current = Array.isArray(entry?.preferredCollections)
+      ? entry.preferredCollections
+      : [];
+
+    const updated = current.includes(collectionId)
+      ? current.filter((id) => id !== collectionId)
+      : [...current, collectionId];
+
+    try {
+      await saveDay(
+        day,
+        { preferredCollections: updated },
+        updated.length
+          ? `${day} collection filter updated`
+          : `${day} collection filter cleared`
+      );
+    } catch (err) {
+      console.error(err);
+      showToast(err?.message || "Failed to update day collection", "error");
+    }
+  };
+
   const handleClear = async () => {
     if (!window.confirm("Clear all weekly meals?")) return;
 
@@ -1095,6 +1206,7 @@ const WeeklyMeals = () => {
           disabled: Boolean(entry?.disabled),
           manuallySelected: Boolean(entry?.manuallySelected),
           locked: Boolean(entry?.locked),
+          preferredCollections: entry?.preferredCollections || [],
         };
       });
 
@@ -1308,7 +1420,11 @@ const WeeklyMeals = () => {
             }}
           >
             <ShuffleIcon size={20} />
-            {generating ? "Generating..." : hasAnyMeals ? "Regenerate All" : "Generate Meals"}
+            {generating
+              ? "Generating..."
+              : hasAnyMeals
+              ? "Regenerate All"
+              : "Generate Meals"}
           </button>
 
           <button
@@ -1557,6 +1673,8 @@ const WeeklyMeals = () => {
                   onDeleteDay={() => handleDeleteDay(day)}
                   onSelectMeal={() => setPickerDay(day)}
                   onToggleLock={() => handleToggleLock(day)}
+                  collections={collections}
+                  onDayCollectionChange={handleDayCollectionChange}
                   isRerolling={rerollingDay === day}
                   isAddingToList={addingToListDay === day}
                   theme={theme}
@@ -1579,7 +1697,8 @@ const WeeklyMeals = () => {
           >
             <h3 style={{ margin: "0 0 12px", color: theme.text }}>👆 Get Started</h3>
             <p style={{ margin: 0, color: theme.textSecondary }}>
-              Click <strong>"Generate Meals"</strong> to build your weekly plan, or manually select meals for specific days.
+              Click <strong>"Generate Meals"</strong> to build your weekly plan, or
+              manually select meals for specific days.
             </p>
           </div>
         )}

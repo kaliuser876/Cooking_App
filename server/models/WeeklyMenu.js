@@ -19,11 +19,17 @@ const dayEntrySchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    preferredCollections: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Collection",
+      },
+    ],
   },
   { _id: false }
 );
 
-const WeeklyMenuSchema = new mongoose.Schema(
+const weeklyMenuSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -51,4 +57,4 @@ const WeeklyMenuSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("WeeklyMenu", WeeklyMenuSchema);
+export default mongoose.model("WeeklyMenu", weeklyMenuSchema);

@@ -9,7 +9,8 @@ import cookieParser from "cookie-parser";
 import recipeRoutes from "./routes/recipes.js";
 import shoppingListRoutes from "./routes/shoppingList.js";
 import authRoutes from "./routes/auth.js";
-import collectionRoutes from "./routes/collections.js"; // NEW
+import collectionRoutes from "./routes/collections.js"; 
+import weeklyMenuRoutes from "./routes/weeklyMenu.js";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -29,7 +30,8 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/recipes", recipeRoutes);
 app.use("/api/shopping-list", shoppingListRoutes);
-app.use("/api/collections", collectionRoutes); // NEW
+app.use("/api/collections", collectionRoutes);
+app.use("/api/weekly-menu", weeklyMenuRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running");

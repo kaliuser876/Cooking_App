@@ -219,8 +219,8 @@ const MultiSelectDropdown = ({
             borderRadius: "12px",
             boxShadow: `0 10px 24px ${theme.shadow}`,
             zIndex: 1000,
-            maxHeight,
-            overflowY: maxHeight ? "auto" : "visible",
+            maxHeight: maxHeight || "320px",
+            overflowY: "auto",
             padding: "8px",
           }}
         >
@@ -603,7 +603,7 @@ const MealDayCard = ({
       style={{
         backgroundColor: theme.cardBackground,
         borderRadius: "16px",
-        overflow: "hidden",
+        overflow: "visible",
         boxShadow: `0 4px 12px ${theme.shadow}`,
         display: "flex",
         flexDirection: "column",
@@ -623,6 +623,8 @@ const MealDayCard = ({
           alignItems: "center",
           gap: "8px",
           flexWrap: "wrap",
+          borderTopLeftRadius: "16px",
+          borderTopRightRadius: "16px",
         }}
       >
         <span>{day}</span>
@@ -747,7 +749,7 @@ const MealDayCard = ({
             onChange={(updated) => onDayCollectionChange(day, updated)}
             theme={theme}
             allLabel="Use all recipes for this day"
-            maxHeight={null}
+            maxHeight="320px"
           />
         </div>
 

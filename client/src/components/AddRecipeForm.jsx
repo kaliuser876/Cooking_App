@@ -1,21 +1,33 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-const API_BASE_URL = import.meta.env.VITE_API_URL;
 import { getAuthHeaders } from "../context/AuthContext";
+
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const AddRecipeForm = () => {
   const [url, setUrl] = useState("");
   const [recipe, setRecipe] = useState(null);
 
   const [name, setName] = useState("");
+  const [image, setImage] = useState("");
   const [ingredients, setIngredients] = useState([]);
   const [instructions, setInstructions] = useState([]);
+
+  const [showForm, setShowForm] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
+
+  const resetForm = () => {
+    setRecipe(null);
+    setName("");
+    setImage("");
+    setIngredients([]);
+    setInstructions([]);
+  };
 
   const handleScrape = async () => {
     const trimmedUrl = url.trim();
@@ -42,9 +54,11 @@ const AddRecipeForm = () => {
 
       setRecipe(data);
       setName(data?.name || data?.title || "");
+      setImage(data?.image || "");
       setIngredients(Array.isArray(data?.ingredients) ? data.ingredients : []);
       setInstructions(Array.isArray(data?.instructions) ? data.instructions : []);
       setUrl(trimmedUrl);
+      setShowForm(true);
     } catch (err) {
       console.error(err);
       setError(err?.message || "Error scraping recipe");
@@ -53,15 +67,19 @@ const AddRecipeForm = () => {
     }
   };
 
+  const handleAddManually = () => {
+    setError("");
+    setUrl("");
+    resetForm();
+    setShowForm(true);
+  };
+
   const handleSave = async () => {
     const trimmedName = name.trim();
+    const trimmedImage = image.trim();
+    const trimmedUrl = url.trim();
     const cleanedIngredients = ingredients.map((item) => item.trim()).filter(Boolean);
     const cleanedInstructions = instructions.map((step) => step.trim()).filter(Boolean);
-
-    if (!recipe) {
-      setError("Please scrape a recipe first.");
-      return;
-    }
 
     if (!trimmedName || cleanedIngredients.length === 0) {
       setError("Recipe must have a name and at least one ingredient.");
@@ -82,10 +100,10 @@ const AddRecipeForm = () => {
         },
         body: JSON.stringify({
           name: trimmedName,
-          image: recipe?.image || "",
+          image: trimmedImage,
           ingredients: cleanedIngredients,
           instructions: cleanedInstructions,
-          url: url.trim(),
+          url: trimmedUrl,
         }),
       });
 
@@ -110,35 +128,52 @@ const AddRecipeForm = () => {
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      <div style={{ marginBottom: "20px" }}>
+      <div style={{ marginBottom: "20px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
         <input
           type="text"
           placeholder="Paste recipe URL..."
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          style={{ width: "70%", padding: "10px" }}
+          style={{ flex: "1 1 400px", padding: "10px" }}
           disabled={loading || saving}
         />
+
         <button
           onClick={handleScrape}
           disabled={loading || saving || !url.trim()}
           style={{
-            padding: "10px",
-            marginLeft: "10px",
+            padding: "10px 16px",
             cursor: loading || saving || !url.trim() ? "not-allowed" : "pointer",
             opacity: loading || saving || !url.trim() ? 0.7 : 1,
           }}
         >
           {loading ? "Scraping..." : "Scrape"}
         </button>
+
+        <button
+          onClick={handleAddManually}
+          disabled={loading || saving}
+          style={{
+            padding: "10px 16px",
+            backgroundColor: "#1976d2",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: loading || saving ? "not-allowed" : "pointer",
+            opacity: loading || saving ? 0.7 : 1,
+          }}
+        >
+          Add Manually
+        </button>
       </div>
 
-      {recipe && (
+      {showForm && (
         <div style={{ borderTop: "1px solid #ccc", paddingTop: "20px" }}>
           <h1 style={{ textAlign: "center" }}>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder="Recipe Name"
               style={{
                 fontSize: "24px",
                 textAlign: "center",
@@ -150,16 +185,31 @@ const AddRecipeForm = () => {
             />
           </h1>
 
-          {recipe.image && (
+          <div style={{ marginBottom: "20px" }}>
+            <h3>Image URL</h3>
+            <input
+              type="text"
+              value={image}
+              onChange={(e) => setImage(e.target.value)}
+              placeholder="Paste image URL (optional)"
+              style={{ width: "100%", padding: "10px" }}
+              disabled={saving}
+            />
+          </div>
+
+          {image && (
             <img
-              src={recipe.image}
-              alt="recipe"
+              src={image}
+              alt="recipe preview"
               style={{
                 width: "100%",
                 maxHeight: "300px",
                 objectFit: "cover",
                 borderRadius: "8px",
                 marginBottom: "20px",
+              }}
+              onError={(e) => {
+                e.target.style.display = "none";
               }}
             />
           )}
@@ -173,11 +223,11 @@ const AddRecipeForm = () => {
                   e.target.value
                     .split("\n")
                     .map((line) => line.trim())
-                    .filter(Boolean)
                 )
               }
               rows={10}
               style={{ width: "100%", padding: "10px" }}
+              placeholder="Enter one ingredient per line"
               disabled={saving}
             />
           </div>
@@ -187,12 +237,11 @@ const AddRecipeForm = () => {
             <textarea
               value={instructions.join("\n")}
               onChange={(e) =>
-                setInstructions(
-                  e.target.value.split("\n")
-                )
+                setInstructions(e.target.value.split("\n"))
               }
               rows={10}
               style={{ width: "100%", padding: "10px" }}
+              placeholder="Enter one instruction step per line"
               disabled={saving}
             />
           </div>

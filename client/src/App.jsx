@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Routes, Route, Link, useLocation, Navigate } from "react-router-dom";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -12,15 +12,15 @@ import SavedRecipes from "./components/SavedRecipes";
 import RecipeDetail from "./components/RecipeDetail";
 import ShoppingList from "./components/ShoppingList";
 import WeeklyMeals from "./components/WeeklyMeals";
+import RandomRecipe from "./components/RandomRecipe";
 import EditRecipe from "./components/EditRecipe";
-import Collections from "./components/Collections"; // NEW
-import SharedRecipe from "./components/SharedRecipe"; // NEW
+import Collections from "./components/Collections";
+import SharedRecipe from "./components/SharedRecipe";
 import CollectionDetail from "./components/CollectionDetail";
 
 import "./App.css";
 
-// NavLink component with active state
-const NavLink = ({ to, children }) => {
+const NavLink = ({ to, children, mobile }) => {
   const location = useLocation();
   const { theme } = useTheme();
   const isActive = location.pathname === to;
@@ -32,10 +32,13 @@ const NavLink = ({ to, children }) => {
         color: isActive ? theme.buttonSuccess : theme.buttonPrimary,
         textDecoration: "none",
         fontWeight: isActive ? 600 : 500,
-        padding: "8px 12px",
-        borderRadius: "6px",
+        padding: mobile ? "10px 12px" : "8px 12px",
+        borderRadius: "8px",
         backgroundColor: isActive ? `${theme.buttonSuccess}15` : "transparent",
         transition: "all 0.2s",
+        fontSize: mobile ? "14px" : "15px",
+        textAlign: "center",
+        minWidth: mobile ? "120px" : "auto",
       }}
     >
       {children}
@@ -43,10 +46,19 @@ const NavLink = ({ to, children }) => {
   );
 };
 
-// Header component - mobile-friendly centered version
 const Header = () => {
   const { darkMode, theme, toggleDarkMode } = useTheme();
   const { user } = useAuth();
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   if (!user) return null;
 
@@ -55,16 +67,16 @@ const Header = () => {
       style={{
         backgroundColor: theme.toolbarBackground,
         borderBottom: `1px solid ${theme.border}`,
-        padding: "16px 24px",
+        padding: isMobile ? "14px 12px" : "16px 24px",
       }}
     >
-      {/* Top row: Title centered, toggle absolute right */}
       <div
         style={{
           display: "flex",
-          justifyContent: "center",
+          flexDirection: isMobile ? "column" : "row",
+          justifyContent: "space-between",
           alignItems: "center",
-          position: "relative",
+          gap: isMobile ? "12px" : "16px",
           marginBottom: "12px",
         }}
       >
@@ -72,20 +84,18 @@ const Header = () => {
           style={{
             margin: 0,
             color: theme.text,
-            fontSize: "1.5rem",
+            fontSize: isMobile ? "1.25rem" : "1.5rem",
             textAlign: "center",
+            lineHeight: 1.2,
           }}
         >
           🍳 My Recipe App
         </h1>
 
-        {/* Dark mode toggle - positioned absolute right */}
         <button
           onClick={toggleDarkMode}
           style={{
-            position: "absolute",
-            right: 0,
-            padding: "8px 14px",
+            padding: isMobile ? "10px 14px" : "8px 14px",
             backgroundColor: darkMode ? "#ffc107" : "#333",
             color: darkMode ? "#333" : "#fff",
             border: "none",
@@ -94,34 +104,36 @@ const Header = () => {
             fontWeight: 500,
             display: "flex",
             alignItems: "center",
+            justifyContent: "center",
             gap: "6px",
             fontSize: "14px",
+            minWidth: isMobile ? "140px" : "auto",
           }}
         >
-          {darkMode ? "☀️" : "🌙"}
+          {darkMode ? "☀️ Light" : "🌙 Dark"}
         </button>
       </div>
 
-      {/* Navigation - centered - UPDATED with Collections */}
       <nav
         style={{
           display: "flex",
-          gap: "8px",
+          gap: isMobile ? "8px" : "10px",
           flexWrap: "wrap",
           justifyContent: "center",
+          alignItems: "center",
         }}
       >
-        <NavLink to="/">Home</NavLink>
-        <NavLink to="/collections">Collections</NavLink>
-        <NavLink to="/weekly-meals">Weekly Meals</NavLink>
-        <NavLink to="/add">Add Recipe</NavLink>
-        <NavLink to="/shopping-list">Shopping List</NavLink>
+        <NavLink to="/" mobile={isMobile}>Home</NavLink>
+        <NavLink to="/collections" mobile={isMobile}>Collections</NavLink>
+        <NavLink to="/weekly-meals" mobile={isMobile}>Weekly Meals</NavLink>
+        <NavLink to="/random-recipe" mobile={isMobile}>Random Recipe</NavLink>
+        <NavLink to="/add" mobile={isMobile}>Add Recipe</NavLink>
+        <NavLink to="/shopping-list" mobile={isMobile}>Shopping List</NavLink>
       </nav>
     </header>
   );
 };
 
-// Main app content with protected routes
 const AppContent = () => {
   const { theme } = useTheme();
   const { user, loading } = useAuth();
@@ -162,18 +174,14 @@ const AppContent = () => {
 
       <main style={{ padding: user ? "24px 16px" : "0", flex: 1 }}>
         <Routes>
-          {/* Public routes */}
           <Route
             path="/login"
             element={user ? <Navigate to="/" replace /> : <Login />}
           />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          
-          {/* NEW: Public shared recipe route */}
           <Route path="/shared/:shareToken" element={<SharedRecipe />} />
 
-          {/* Protected routes */}
           <Route
             path="/"
             element={
@@ -182,7 +190,6 @@ const AppContent = () => {
               </ProtectedRoute>
             }
           />
-          {/* NEW: Collections route */}
           <Route
             path="/collections"
             element={
@@ -204,6 +211,14 @@ const AppContent = () => {
             element={
               <ProtectedRoute>
                 <WeeklyMeals />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/random-recipe"
+            element={
+              <ProtectedRoute>
+                <RandomRecipe />
               </ProtectedRoute>
             }
           />
@@ -239,9 +254,7 @@ const AppContent = () => {
               </ProtectedRoute>
             }
           />
-          
 
-          {/* Catch all */}
           <Route
             path="*"
             element={<Navigate to={user ? "/" : "/login"} replace />}

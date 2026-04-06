@@ -137,33 +137,37 @@ const Toast = ({ message, type, onClose }) => {
   );
 };
 
-const CollectionDropdown = ({
-  collections,
-  selected,
+const MultiSelectDropdown = ({
+  label,
+  items,
+  selectedIds,
   onChange,
   theme,
-  label,
+  width = "100%",
+  allLabel = "Use all recipes",
 }) => {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const close = () => setOpen(false);
-    if (open) window.addEventListener("click", close);
-    return () => window.removeEventListener("click", close);
+    const handleWindowClick = () => setOpen(false);
+    if (open) {
+      window.addEventListener("click", handleWindowClick);
+    }
+    return () => window.removeEventListener("click", handleWindowClick);
   }, [open]);
 
   return (
     <div
-      style={{ position: "relative", width: "100%" }}
+      style={{ position: "relative", width }}
       onClick={(e) => e.stopPropagation()}
     >
       {label && (
         <div
           style={{
-            fontSize: "12px",
-            fontWeight: 700,
-            color: theme.textSecondary,
             marginBottom: "8px",
+            color: theme.textSecondary,
+            fontWeight: 700,
+            fontSize: "12px",
             textTransform: "uppercase",
             letterSpacing: "0.5px",
           }}
@@ -171,6 +175,7 @@ const CollectionDropdown = ({
           {label}
         </div>
       )}
+
       <button
         onClick={() => setOpen((prev) => !prev)}
         style={{
@@ -189,18 +194,14 @@ const CollectionDropdown = ({
           textAlign: "left",
         }}
       >
-        <span
-          style={{
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {selected.length === 0
+        <span>
+          {selectedIds.length === 0
             ? "All recipes"
-            : `${selected.length} collection${selected.length > 1 ? "s" : ""} selected`}
+            : `${selectedIds.length} collection${
+                selectedIds.length > 1 ? "s" : ""
+              } selected`}
         </span>
-        <span style={{ fontSize: "12px", opacity: 0.7, flexShrink: 0, marginLeft: "8px" }}>
+        <span style={{ fontSize: "12px", opacity: 0.7 }}>
           {open ? "▲" : "▼"}
         </span>
       </button>
@@ -209,18 +210,17 @@ const CollectionDropdown = ({
         <div
           style={{
             position: "absolute",
-            top: "calc(100% + 6px)",
+            top: "calc(100% + 8px)",
             left: 0,
             width: "100%",
-            minWidth: "200px",
             backgroundColor: theme.cardBackground,
             border: `1px solid ${theme.border}`,
             borderRadius: "12px",
             boxShadow: `0 10px 24px ${theme.shadow}`,
             zIndex: 1000,
-            maxHeight: "280px",
+            maxHeight: "320px",
             overflowY: "auto",
-            padding: "6px",
+            padding: "8px",
           }}
         >
           <button
@@ -233,25 +233,24 @@ const CollectionDropdown = ({
               padding: "10px 12px",
               border: "none",
               background:
-                selected.length === 0 ? theme.toolbarBackground : "transparent",
+                selectedIds.length === 0 ? theme.toolbarBackground : "transparent",
               borderRadius: "8px",
               cursor: "pointer",
               textAlign: "left",
               color: theme.text,
-              fontWeight: selected.length === 0 ? 700 : 500,
-              marginBottom: "4px",
-              fontSize: "13px",
+              fontWeight: selectedIds.length === 0 ? 700 : 500,
+              marginBottom: "6px",
             }}
           >
-            ✅ All recipes
+            ✅ {allLabel}
           </button>
 
-          {collections.map((collection) => {
-            const checked = selected.includes(collection._id);
+          {items.map((item) => {
+            const checked = selectedIds.includes(item._id);
 
             return (
               <label
-                key={collection._id}
+                key={item._id}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -259,9 +258,10 @@ const CollectionDropdown = ({
                   padding: "10px 12px",
                   borderRadius: "8px",
                   cursor: "pointer",
-                  backgroundColor: checked ? theme.toolbarBackground : "transparent",
+                  backgroundColor: checked
+                    ? theme.toolbarBackground
+                    : "transparent",
                   color: theme.text,
-                  fontSize: "13px",
                 }}
               >
                 <input
@@ -269,13 +269,14 @@ const CollectionDropdown = ({
                   checked={checked}
                   onChange={() => {
                     const updated = checked
-                      ? selected.filter((id) => id !== collection._id)
-                      : [...selected, collection._id];
+                      ? selectedIds.filter((id) => id !== item._id)
+                      : [...selectedIds, item._id];
+
                     onChange(updated);
                   }}
                 />
                 <span>
-                  {collection.icon || "📁"} {collection.name}
+                  {item.icon || "📁"} {item.name}
                 </span>
               </label>
             );
@@ -596,10 +597,6 @@ const MealDayCard = ({
   const recipe = entry?.recipe;
   const [imageError, setImageError] = useState(false);
 
-  const dayPreferred = Array.isArray(entry?.preferredCollections)
-    ? entry.preferredCollections
-    : [];
-
   return (
     <div
       style={{
@@ -742,12 +739,13 @@ const MealDayCard = ({
         </div>
 
         <div style={{ marginBottom: "12px" }}>
-          <CollectionDropdown
-            collections={collections}
-            selected={dayPreferred}
+          <MultiSelectDropdown
+            label="Day Collections"
+            items={collections}
+            selectedIds={entry?.preferredCollections || []}
             onChange={(updated) => onDayCollectionChange(day, updated)}
             theme={theme}
-            label="Day Collections"
+            allLabel="Use all recipes for this day"
           />
         </div>
 
@@ -1596,7 +1594,7 @@ const WeeklyMeals = () => {
             </>
           )}
 
-          <div style={{ width: "100%", marginTop: "8px" }}>
+          <div style={{ width: "100%", marginTop: "8px", maxWidth: "420px" }}>
             {collectionsLoading ? (
               <div style={{ color: theme.textSecondary, fontSize: "14px" }}>
                 Loading collections...
@@ -1606,15 +1604,14 @@ const WeeklyMeals = () => {
                 No collections available
               </div>
             ) : (
-              <div style={{ maxWidth: "420px" }}>
-                <CollectionDropdown
-                  collections={collections}
-                  selected={selectedCollections}
-                  onChange={handleBulkCollectionUpdate}
-                  theme={theme}
-                  label="Filter meal generation by collection"
-                />
-              </div>
+              <MultiSelectDropdown
+                label="Filter meal generation by collection"
+                items={collections}
+                selectedIds={selectedCollections}
+                onChange={handleBulkCollectionUpdate}
+                theme={theme}
+                allLabel="Use all recipes"
+              />
             )}
           </div>
 

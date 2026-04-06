@@ -14,20 +14,70 @@ const DEFAULT_CATEGORIES = ["Produce", "Dairy", "Meat", "Pantry", "Spices", "Oth
 const normalizeIngredientName = (name = "") =>
   name.trim().toLowerCase().replace(/\s+/g, " ");
 
-const ensureDefaultCategoryExists = async (userId, categoryName) => {
-  const existing = await ShoppingCategory.findOne({ userId, name: categoryName });
+const normalizeIncomingIngredient = (item) => {
+  if (typeof item === "string") {
+    return {
+      name: item.trim(),
+      quantity: 1,
+      unit: "",
+      category: "",
+    };
+  }
+
+  if (!item || typeof item !== "object") {
+    return {
+      name: "",
+      quantity: 1,
+      unit: "",
+      category: "",
+    };
+  }
+
+  return {
+    name: String(item.name || "").trim(),
+    quantity:
+      item.quantity !== undefined && !Number.isNaN(Number(item.quantity))
+        ? Number(item.quantity)
+        : 1,
+    unit: String(item.unit || "").trim(),
+    category: String(item.category || "").trim(),
+  };
+};
+
+const ensureCategoryExists = async (userId, categoryName) => {
+  const trimmed = String(categoryName || "").trim();
+  if (!trimmed) return null;
+
+  const existing = await ShoppingCategory.findOne({ userId, name: trimmed });
   if (existing) return existing;
 
   const maxOrderCategory = await ShoppingCategory.findOne({ userId }).sort({ order: -1 });
   const order = (maxOrderCategory?.order ?? -1) + 1;
 
-  const created = await ShoppingCategory.create({
+  return ShoppingCategory.create({
     userId,
-    name: categoryName,
+    name: trimmed,
     order,
   });
+};
 
-  return created;
+const ensureDefaultCategories = async (userId) => {
+  const existing = await ShoppingCategory.find({ userId }).select("name");
+  const existingNames = new Set(existing.map((c) => c.name));
+
+  const missing = DEFAULT_CATEGORIES.filter((name) => !existingNames.has(name));
+  if (missing.length === 0) return;
+
+  const maxOrderCategory = await ShoppingCategory.findOne({ userId }).sort({ order: -1 });
+  let nextOrder = (maxOrderCategory?.order ?? -1) + 1;
+
+  await ShoppingCategory.insertMany(
+    missing.map((name) => ({
+      userId,
+      name,
+      order: nextOrder++,
+    }))
+  );
 };
 
 const getRememberedCategory = async (userId, name) => {
@@ -44,17 +94,19 @@ const getRememberedCategory = async (userId, name) => {
 
 const saveCategoryPreference = async (userId, name, category) => {
   const normalizedName = normalizeIngredientName(name);
-  if (!normalizedName || !category) return;
+  const trimmedCategory = String(category || "").trim();
 
-  await ensureDefaultCategoryExists(userId, category);
+  if (!normalizedName || !trimmedCategory) return;
+
+  await ensureCategoryExists(userId, trimmedCategory);
 
   await IngredientCategoryPreference.findOneAndUpdate(
     { userId, normalizedName },
     {
       userId,
       normalizedName,
-      originalName: name.trim(),
-      category: category.trim(),
+      originalName: String(name || "").trim(),
+      category: trimmedCategory,
     },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
@@ -78,21 +130,12 @@ router.get("/", async (req, res) => {
 // GET shopping categories
 router.get("/categories", async (req, res) => {
   try {
+    await ensureDefaultCategories(req.user._id);
+
     const categories = await ShoppingCategory.find({ userId: req.user._id }).sort({
       order: 1,
       name: 1,
     });
-
-    if (categories.length === 0) {
-      const defaults = await ShoppingCategory.insertMany(
-        DEFAULT_CATEGORIES.map((name, index) => ({
-          userId: req.user._id,
-          name,
-          order: index,
-        }))
-      );
-      return res.json(defaults);
-    }
 
     res.json(categories);
   } catch (err) {
@@ -105,7 +148,7 @@ router.get("/categories", async (req, res) => {
 router.post("/categories", async (req, res) => {
   try {
     let { name } = req.body;
-    name = name?.trim();
+    name = String(name || "").trim();
 
     if (!name) {
       return res.status(400).json({ message: "Category name is required" });
@@ -231,8 +274,8 @@ router.post("/category-preferences", async (req, res) => {
   try {
     let { name, category } = req.body;
 
-    name = name?.trim();
-    category = category?.trim();
+    name = String(name || "").trim();
+    category = String(category || "").trim();
 
     if (!name) {
       return res.status(400).json({ message: "Ingredient name is required" });
@@ -242,20 +285,13 @@ router.post("/category-preferences", async (req, res) => {
       return res.status(400).json({ message: "Category is required" });
     }
 
-    await ensureDefaultCategoryExists(req.user._id, category);
+    await saveCategoryPreference(req.user._id, name, category);
 
     const normalizedName = normalizeIngredientName(name);
-
-    const preference = await IngredientCategoryPreference.findOneAndUpdate(
-      { userId: req.user._id, normalizedName },
-      {
-        userId: req.user._id,
-        normalizedName,
-        originalName: name,
-        category,
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
+    const preference = await IngredientCategoryPreference.findOne({
+      userId: req.user._id,
+      normalizedName,
+    });
 
     res.json(preference);
   } catch (err) {
@@ -269,21 +305,36 @@ router.post("/", async (req, res) => {
   try {
     const { items } = req.body;
 
-    if (!items || !Array.isArray(items)) {
+    if (!Array.isArray(items)) {
       return res.status(400).json({ message: "Items must be an array" });
     }
 
+    await ensureDefaultCategories(req.user._id);
+
     const existingItems = await ShoppingItem.find({ userId: req.user._id });
 
-    const incomingWithCategories = await Promise.all(
-      items.map(async (item) => {
+    const normalizedIncoming = await Promise.all(
+      items.map(async (rawItem) => {
+        const item = normalizeIncomingIngredient(rawItem);
         const rememberedCategory = await getRememberedCategory(req.user._id, item.name);
+
         return {
-          ...item,
-          category: item.category?.trim() || rememberedCategory || "Other",
+          name: item.name,
+          quantity:
+            item.quantity !== undefined && !Number.isNaN(Number(item.quantity))
+              ? Number(item.quantity)
+              : 1,
+          unit: item.unit || "",
+          category: item.category || rememberedCategory || "Other",
         };
       })
     );
+
+    const validIncoming = normalizedIncoming.filter((item) => item.name);
+
+    if (validIncoming.length === 0) {
+      return res.status(400).json({ message: "No valid ingredients were provided" });
+    }
 
     const combined = [
       ...existingItems.map((i) => ({
@@ -292,7 +343,7 @@ router.post("/", async (req, res) => {
         unit: i.unit,
         category: i.category,
       })),
-      ...incomingWithCategories,
+      ...validIncoming,
     ];
 
     const merged = mergeIngredients(combined);
@@ -307,27 +358,30 @@ router.post("/", async (req, res) => {
 
     let maxOrder = Math.max(-1, ...existingItems.map((i) => i.order ?? -1));
 
-    const itemsWithMeta = await Promise.all(
-      merged.map(async (item) => {
-        const rememberedCategory = await getRememberedCategory(req.user._id, item.name);
-        const finalCategory = item.category?.trim() || rememberedCategory || "Other";
+    const itemsWithMeta = [];
+    for (const item of merged) {
+      const rememberedCategory = await getRememberedCategory(req.user._id, item.name);
+      const finalCategory = String(item.category || rememberedCategory || "Other").trim() || "Other";
 
-        await ensureDefaultCategoryExists(req.user._id, finalCategory);
+      await ensureCategoryExists(req.user._id, finalCategory);
+      await saveCategoryPreference(req.user._id, item.name, finalCategory);
 
-        const key = `${normalizeIngredientName(item.name)}|${item.unit || ""}`;
-        const existing = existingMap[key];
+      const key = `${normalizeIngredientName(item.name)}|${item.unit || ""}`;
+      const existing = existingMap[key];
 
-        await saveCategoryPreference(req.user._id, item.name, finalCategory);
-
-        return {
-          ...item,
-          userId: req.user._id,
-          category: finalCategory,
-          checked: existing?.checked || false,
-          order: existing?.order ?? ++maxOrder,
-        };
-      })
-    );
+      itemsWithMeta.push({
+        name: String(item.name || "").trim(),
+        quantity:
+          item.quantity !== undefined && !Number.isNaN(Number(item.quantity))
+            ? Number(item.quantity)
+            : 1,
+        unit: String(item.unit || "").trim(),
+        category: finalCategory,
+        userId: req.user._id,
+        checked: existing?.checked || false,
+        order: existing?.order ?? ++maxOrder,
+      });
+    }
 
     await ShoppingItem.deleteMany({ userId: req.user._id });
     const saved = await ShoppingItem.insertMany(itemsWithMeta);
@@ -348,18 +402,18 @@ router.post("/item", async (req, res) => {
   try {
     let { name, quantity, unit, category } = req.body;
 
-    name = name?.trim();
+    name = String(name || "").trim();
     if (!name) {
       return res.status(400).json({ message: "Name is required" });
     }
 
     quantity = Number(quantity) || 1;
-    unit = unit?.trim() || "";
+    unit = String(unit || "").trim();
 
     const rememberedCategory = await getRememberedCategory(req.user._id, name);
-    category = category?.trim() || rememberedCategory || "Other";
+    category = String(category || rememberedCategory || "Other").trim() || "Other";
 
-    await ensureDefaultCategoryExists(req.user._id, category);
+    await ensureCategoryExists(req.user._id, category);
 
     const maxOrderItem = await ShoppingItem.findOne({ userId: req.user._id }).sort({
       order: -1,
@@ -413,7 +467,6 @@ router.patch("/reorder", async (req, res) => {
 
     const userItems = await ShoppingItem.find({ userId: req.user._id }).select("_id");
     const validIds = new Set(userItems.map((item) => String(item._id)));
-
     const filteredIds = orderedIds.filter((id) => validIds.has(String(id)));
 
     const bulkOps = filteredIds.map((id, index) => ({
@@ -465,7 +518,7 @@ router.patch("/:id", async (req, res) => {
     const updateFields = {};
 
     if (name !== undefined) {
-      const trimmedName = name.trim();
+      const trimmedName = String(name).trim();
       if (!trimmedName) {
         return res.status(400).json({ message: "Name is required" });
       }
@@ -481,12 +534,12 @@ router.patch("/:id", async (req, res) => {
     }
 
     if (unit !== undefined) {
-      updateFields.unit = unit.trim();
+      updateFields.unit = String(unit).trim();
     }
 
     if (category !== undefined) {
-      const finalCategory = category.trim() || "Other";
-      await ensureDefaultCategoryExists(req.user._id, finalCategory);
+      const finalCategory = String(category).trim() || "Other";
+      await ensureCategoryExists(req.user._id, finalCategory);
       updateFields.category = finalCategory;
     }
 

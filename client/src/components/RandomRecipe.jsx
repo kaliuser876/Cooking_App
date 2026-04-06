@@ -4,6 +4,7 @@ import { useTheme } from "../context/ThemeContext";
 import { getAuthHeaders } from "../context/AuthContext";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
+const STORAGE_KEY = "randomRecipeState";
 
 const DiceIcon = ({ size = 20 }) => (
   <svg
@@ -859,15 +860,38 @@ const createEmptyEntry = (index) => ({
   preferredCollections: [],
 });
 
+const loadStoredState = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (error) {
+    console.error("Failed to load RandomRecipe localStorage", error);
+    return null;
+  }
+};
+
 const RandomRecipe = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
 
+  const storedState = loadStoredState();
+
   const [allRecipes, setAllRecipes] = useState([]);
   const [collections, setCollections] = useState([]);
-  const [selectedCollections, setSelectedCollections] = useState([]);
-  const [recipeCountInput, setRecipeCountInput] = useState("7");
-  const [recipeSlots, setRecipeSlots] = useState([]);
+  const [selectedCollections, setSelectedCollections] = useState(
+    Array.isArray(storedState?.selectedCollections)
+      ? storedState.selectedCollections
+      : []
+  );
+  const [recipeCountInput, setRecipeCountInput] = useState(
+    storedState?.recipeCountInput ?? "7"
+  );
+  const [recipeSlots, setRecipeSlots] = useState(
+    Array.isArray(storedState?.recipeSlots) && storedState.recipeSlots.length > 0
+      ? storedState.recipeSlots
+      : Array.from({ length: 7 }, (_, index) => createEmptyEntry(index))
+  );
 
   const [loading, setLoading] = useState(true);
   const [collectionsLoading, setCollectionsLoading] = useState(true);
@@ -913,9 +937,6 @@ const RandomRecipe = () => {
 
       setAllRecipes(recipes);
       setCollections(collectionsData);
-
-      const initialCount = 7;
-      setRecipeSlots(Array.from({ length: initialCount }, (_, index) => createEmptyEntry(index)));
     } catch (err) {
       console.error(err);
       setError(err?.message || "Failed to load random recipes");
@@ -929,6 +950,21 @@ const RandomRecipe = () => {
   useEffect(() => {
     loadPageData();
   }, [loadPageData]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          recipeCountInput,
+          selectedCollections,
+          recipeSlots,
+        })
+      );
+    } catch (error) {
+      console.error("Failed to save RandomRecipe localStorage", error);
+    }
+  }, [recipeCountInput, selectedCollections, recipeSlots]);
 
   const parsedRecipeCount = useMemo(() => {
     const n = Number(recipeCountInput);
@@ -1262,13 +1298,12 @@ const RandomRecipe = () => {
 
   const handleClear = () => {
     if (!window.confirm("Clear all random recipe cards?")) return;
-    setRecipeSlots((prev) =>
-      prev.map((slot, index) => ({
-        ...createEmptyEntry(index),
-        id: slot.id,
-        label: `Recipe ${index + 1}`,
-      }))
+
+    const cleared = Array.from({ length: parsedRecipeCount }, (_, index) =>
+      createEmptyEntry(index)
     );
+
+    setRecipeSlots(cleared);
     showToast("Random recipes cleared", "success");
   };
 

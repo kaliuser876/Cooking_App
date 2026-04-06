@@ -137,6 +137,155 @@ const Toast = ({ message, type, onClose }) => {
   );
 };
 
+const CollectionDropdown = ({
+  collections,
+  selected,
+  onChange,
+  theme,
+  label,
+}) => {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const close = () => setOpen(false);
+    if (open) window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [open]);
+
+  return (
+    <div
+      style={{ position: "relative", width: "100%" }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {label && (
+        <div
+          style={{
+            fontSize: "12px",
+            fontWeight: 700,
+            color: theme.textSecondary,
+            marginBottom: "8px",
+            textTransform: "uppercase",
+            letterSpacing: "0.5px",
+          }}
+        >
+          {label}
+        </div>
+      )}
+      <button
+        onClick={() => setOpen((prev) => !prev)}
+        style={{
+          width: "100%",
+          padding: "10px 12px",
+          borderRadius: "10px",
+          border: `1px solid ${theme.border}`,
+          backgroundColor: theme.cardBackground,
+          color: theme.text,
+          cursor: "pointer",
+          fontWeight: 500,
+          fontSize: "13px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          textAlign: "left",
+        }}
+      >
+        <span
+          style={{
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {selected.length === 0
+            ? "All recipes"
+            : `${selected.length} collection${selected.length > 1 ? "s" : ""} selected`}
+        </span>
+        <span style={{ fontSize: "12px", opacity: 0.7, flexShrink: 0, marginLeft: "8px" }}>
+          {open ? "▲" : "▼"}
+        </span>
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: 0,
+            width: "100%",
+            minWidth: "200px",
+            backgroundColor: theme.cardBackground,
+            border: `1px solid ${theme.border}`,
+            borderRadius: "12px",
+            boxShadow: `0 10px 24px ${theme.shadow}`,
+            zIndex: 1000,
+            maxHeight: "280px",
+            overflowY: "auto",
+            padding: "6px",
+          }}
+        >
+          <button
+            onClick={() => {
+              onChange([]);
+              setOpen(false);
+            }}
+            style={{
+              width: "100%",
+              padding: "10px 12px",
+              border: "none",
+              background:
+                selected.length === 0 ? theme.toolbarBackground : "transparent",
+              borderRadius: "8px",
+              cursor: "pointer",
+              textAlign: "left",
+              color: theme.text,
+              fontWeight: selected.length === 0 ? 700 : 500,
+              marginBottom: "4px",
+              fontSize: "13px",
+            }}
+          >
+            ✅ All recipes
+          </button>
+
+          {collections.map((collection) => {
+            const checked = selected.includes(collection._id);
+
+            return (
+              <label
+                key={collection._id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "10px 12px",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  backgroundColor: checked ? theme.toolbarBackground : "transparent",
+                  color: theme.text,
+                  fontSize: "13px",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => {
+                    const updated = checked
+                      ? selected.filter((id) => id !== collection._id)
+                      : [...selected, collection._id];
+                    onChange(updated);
+                  }}
+                />
+                <span>
+                  {collection.icon || "📁"} {collection.name}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const MealPickerModal = ({ open, day, recipes, onClose, onSelect, theme }) => {
   const [search, setSearch] = useState("");
 
@@ -447,6 +596,10 @@ const MealDayCard = ({
   const recipe = entry?.recipe;
   const [imageError, setImageError] = useState(false);
 
+  const dayPreferred = Array.isArray(entry?.preferredCollections)
+    ? entry.preferredCollections
+    : [];
+
   return (
     <div
       style={{
@@ -589,44 +742,13 @@ const MealDayCard = ({
         </div>
 
         <div style={{ marginBottom: "12px" }}>
-          <div
-            style={{
-              fontSize: "12px",
-              fontWeight: 700,
-              color: theme.textSecondary,
-              marginBottom: "8px",
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
-            }}
-          >
-            Day Collections
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            {collections.map((collection) => {
-              const active =
-                Array.isArray(entry?.preferredCollections) &&
-                entry.preferredCollections.includes(collection._id);
-
-              return (
-                <button
-                  key={collection._id}
-                  onClick={() => onDayCollectionChange(day, collection._id)}
-                  style={{
-                    padding: "6px 10px",
-                    borderRadius: "999px",
-                    border: `1px solid ${active ? collection.color : theme.border}`,
-                    backgroundColor: active ? collection.color : theme.cardBackground,
-                    color: active ? "white" : theme.text,
-                    cursor: "pointer",
-                    fontWeight: 600,
-                    fontSize: "11px",
-                  }}
-                >
-                  {collection.icon || "📁"} {collection.name}
-                </button>
-              );
-            })}
-          </div>
+          <CollectionDropdown
+            collections={collections}
+            selected={dayPreferred}
+            onChange={(updated) => onDayCollectionChange(day, updated)}
+            theme={theme}
+            label="Day Collections"
+          />
         </div>
 
         <div
@@ -741,7 +863,6 @@ const WeeklyMeals = () => {
   const [collections, setCollections] = useState([]);
   const [weeklyMenu, setWeeklyMenu] = useState(null);
   const [selectedCollections, setSelectedCollections] = useState([]);
-  const [showCollectionDropdown, setShowCollectionDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
   const [collectionsLoading, setCollectionsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -815,20 +936,6 @@ const WeeklyMeals = () => {
   useEffect(() => {
     loadPageData();
   }, [loadPageData]);
-
-  useEffect(() => {
-    const handleWindowClick = () => {
-      setShowCollectionDropdown(false);
-    };
-
-    if (showCollectionDropdown) {
-      window.addEventListener("click", handleWindowClick);
-    }
-
-    return () => {
-      window.removeEventListener("click", handleWindowClick);
-    };
-  }, [showCollectionDropdown]);
 
   const getDayEntry = useCallback(
     (day) =>
@@ -1157,21 +1264,12 @@ const WeeklyMeals = () => {
     }
   };
 
-  const handleDayCollectionChange = async (day, collectionId) => {
-    const entry = getDayEntry(day);
-    const current = Array.isArray(entry?.preferredCollections)
-      ? entry.preferredCollections
-      : [];
-
-    const updated = current.includes(collectionId)
-      ? current.filter((id) => id !== collectionId)
-      : [...current, collectionId];
-
+  const handleDayCollectionChange = async (day, updatedCollections) => {
     try {
       await saveDay(
         day,
-        { preferredCollections: updated },
-        updated.length
+        { preferredCollections: updatedCollections },
+        updatedCollections.length
           ? `${day} collection filter updated`
           : `${day} collection filter cleared`
       );
@@ -1498,18 +1596,7 @@ const WeeklyMeals = () => {
             </>
           )}
 
-          <div style={{ width: "100%", marginTop: "8px", position: "relative" }}>
-            <div
-              style={{
-                marginBottom: "10px",
-                color: theme.text,
-                fontWeight: 600,
-                fontSize: "14px",
-              }}
-            >
-              Filter meal generation by collection
-            </div>
-
+          <div style={{ width: "100%", marginTop: "8px" }}>
             {collectionsLoading ? (
               <div style={{ color: theme.textSecondary, fontSize: "14px" }}>
                 Loading collections...
@@ -1519,119 +1606,14 @@ const WeeklyMeals = () => {
                 No collections available
               </div>
             ) : (
-              <div
-                style={{ position: "relative", maxWidth: "420px" }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  onClick={() => setShowCollectionDropdown((prev) => !prev)}
-                  style={{
-                    width: "100%",
-                    padding: "12px 14px",
-                    borderRadius: "10px",
-                    border: `1px solid ${theme.border}`,
-                    backgroundColor: theme.cardBackground,
-                    color: theme.text,
-                    cursor: "pointer",
-                    fontWeight: 500,
-                    fontSize: "14px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    textAlign: "left",
-                  }}
-                >
-                  <span>
-                    {selectedCollections.length === 0
-                      ? "All recipes"
-                      : `${selectedCollections.length} collection${
-                          selectedCollections.length > 1 ? "s" : ""
-                        } selected`}
-                  </span>
-                  <span style={{ fontSize: "12px", opacity: 0.7 }}>
-                    {showCollectionDropdown ? "▲" : "▼"}
-                  </span>
-                </button>
-
-                {showCollectionDropdown && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "calc(100% + 8px)",
-                      left: 0,
-                      width: "100%",
-                      backgroundColor: theme.cardBackground,
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: "12px",
-                      boxShadow: `0 10px 24px ${theme.shadow}`,
-                      zIndex: 1000,
-                      maxHeight: "320px",
-                      overflowY: "auto",
-                      padding: "8px",
-                    }}
-                  >
-                    <button
-                      onClick={() => {
-                        handleBulkCollectionUpdate([]);
-                        setShowCollectionDropdown(false);
-                      }}
-                      style={{
-                        width: "100%",
-                        padding: "10px 12px",
-                        border: "none",
-                        background:
-                          selectedCollections.length === 0
-                            ? theme.toolbarBackground
-                            : "transparent",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        textAlign: "left",
-                        color: theme.text,
-                        fontWeight: selectedCollections.length === 0 ? 700 : 500,
-                        marginBottom: "6px",
-                      }}
-                    >
-                      ✅ Use all recipes
-                    </button>
-
-                    {collections.map((collection) => {
-                      const checked = selectedCollections.includes(collection._id);
-
-                      return (
-                        <label
-                          key={collection._id}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                            padding: "10px 12px",
-                            borderRadius: "8px",
-                            cursor: "pointer",
-                            backgroundColor: checked
-                              ? theme.toolbarBackground
-                              : "transparent",
-                            color: theme.text,
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => {
-                              const updated = checked
-                                ? selectedCollections.filter((id) => id !== collection._id)
-                                : [...selectedCollections, collection._id];
-
-                              handleBulkCollectionUpdate(updated);
-                            }}
-                          />
-                          <span>
-                            {collection.icon || "📁"} {collection.name}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
+              <div style={{ maxWidth: "420px" }}>
+                <CollectionDropdown
+                  collections={collections}
+                  selected={selectedCollections}
+                  onChange={handleBulkCollectionUpdate}
+                  theme={theme}
+                  label="Filter meal generation by collection"
+                />
               </div>
             )}
           </div>

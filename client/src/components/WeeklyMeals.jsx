@@ -145,6 +145,7 @@ const MultiSelectDropdown = ({
   theme,
   width = "100%",
   allLabel = "Use all recipes",
+  maxHeight = "320px",
 }) => {
   const [open, setOpen] = useState(false);
 
@@ -218,8 +219,8 @@ const MultiSelectDropdown = ({
             borderRadius: "12px",
             boxShadow: `0 10px 24px ${theme.shadow}`,
             zIndex: 1000,
-            maxHeight: "320px",
-            overflowY: "auto",
+            maxHeight,
+            overflowY: maxHeight ? "auto" : "visible",
             padding: "8px",
           }}
         >
@@ -746,6 +747,7 @@ const MealDayCard = ({
             onChange={(updated) => onDayCollectionChange(day, updated)}
             theme={theme}
             allLabel="Use all recipes for this day"
+            maxHeight={null}
           />
         </div>
 
@@ -1611,6 +1613,7 @@ const WeeklyMeals = () => {
                 onChange={handleBulkCollectionUpdate}
                 theme={theme}
                 allLabel="Use all recipes"
+                maxHeight="320px"
               />
             )}
           </div>
